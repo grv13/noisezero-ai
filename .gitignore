@@ -21,3 +21,6 @@ dist/
 
 # Docker debug log
 docker-debug.log
+
+# Temporary files
+__pycache__/
