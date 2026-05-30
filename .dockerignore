@@ -1,0 +1,30 @@
+# Ignore files managed by Git
+.git
+.gitignore
+
+# Ignore Docker-specific files
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.override.yml
+
+# Ignore local development configurations and secrets
+.env
+.env.local
+
+# Ignore dependency directories (they should be installed within the Dockerfile)
+node_modules
+vendor
+
+# Ignore build output and logs
+build/
+dist/
+*.log
+
+# Ignore IDE and OS-specific files
+.idea/
+.vscode/
+.DS_Store
+
+# Application-specific temporary files
+temp_audio/

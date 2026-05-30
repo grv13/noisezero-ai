@@ -1,0 +1,23 @@
+# Local development configurations and secrets
+# Never commit secrets to version control!
+.env
+.env.local
+.env.*.local
+
+# Dependency directories
+# These should be installed by package managers
+node_modules/
+vendor/
+
+# Build output and logs
+build/
+dist/
+*.log
+
+# IDE and OS-specific files
+.idea/
+.vscode/
+.DS_Store
+
+# Docker debug log
+docker-debug.log
