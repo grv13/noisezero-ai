@@ -8,7 +8,7 @@ import soundfile as sf
 from fastapi.responses import FileResponse, Response
 from dotenv import load_dotenv
 
-from nim_clients.bnr.scripts.bnr import run_client as run_bnr_processing
+from ai_clients.bnr.scripts.bnr import run_client as run_bnr_processing
 
 # Add the project root to the Python path to allow for absolute imports
 from starlette.background import BackgroundTask
