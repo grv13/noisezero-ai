@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoiseZero — AI Denoising Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-void: #080A0E;
+            --bg-surface: #0D1117;
+            --bg-raised: #141920;
+            --bg-hover: #1A2130;
+            --border-subtle: rgba(255,255,255,0.06);
+            --border-mid: rgba(255,255,255,0.12);
+            --border-strong: rgba(255,255,255,0.2);
+            --accent: #00E5A0;
+            --accent-dim: rgba(0,229,160,0.12);
+            --accent-glow: rgba(0,229,160,0.25);
+            --accent-2: #0099FF;
+            --text-primary: #EEF0F4;
+            --text-secondary: #8A94A6;
+            --text-muted: #4A5568;
+            --error: #FF5C5C;
+            --error-dim: rgba(255,92,92,0.1);
+            --font-display: 'Syne', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-display);
+            background-color: var(--bg-void);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ─── Noise texture overlay ─── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        /* ─── Grid lines background ─── */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+            background-size: 80px 80px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 0 2rem 6rem;
+        }
+
+        /* ─── Header ─── */
+        .site-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2.5rem 0 4rem;
+            animation: fadeSlideDown 0.8s var(--ease-out) both;
+        }
+
+        .logo-mark {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            border: 1.5px solid var(--accent);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-waves {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 0 4px;
+        }
+
+        .logo-bar {
+            width: 3px;
+            border-radius: 2px;
+            background: var(--accent);
+            animation: waveIdle 1.4s ease-in-out infinite;
+        }
+
+        .logo-bar:nth-child(1) { height: 8px; animation-delay: 0s; }
+        .logo-bar:nth-child(2) { height: 16px; animation-delay: 0.15s; }
+        .logo-bar:nth-child(3) { height: 10px; animation-delay: 0.3s; }
+        .logo-bar:nth-child(4) { height: 20px; animation-delay: 0.1s; }
+        .logo-bar:nth-child(5) { height: 12px; animation-delay: 0.25s; }
+
+        @keyframes waveIdle {
+            0%, 100% { transform: scaleY(1); opacity: 0.6; }
+            50% { transform: scaleY(0.5); opacity: 1; }
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+        .header-badge {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border: 1px solid var(--border-subtle);
+            padding: 6px 12px;
+            border-radius: 100px;
+        }
+
+        /* ─── Hero ─── */
+        .hero {
+            padding-bottom: 5rem;
+            animation: fadeSlideUp 0.9s var(--ease-out) 0.1s both;
+        }
+
+        .hero-eyebrow {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--accent);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hero-eyebrow::before {
+            content: '';
+            display: inline-block;
+            width: 32px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        .hero-title {
+            font-size: clamp(2.8rem, 6vw, 4.8rem);
+            font-weight: 800;
+            line-height: 0.95;
+            letter-spacing: -0.04em;
+            margin-bottom: 1.75rem;
+        }
+
+        .hero-title em {
+            font-style: normal;
+            color: transparent;
+            -webkit-text-stroke: 1.5px var(--text-secondary);
+        }
+
+        .hero-sub {
+            font-size: 15px;
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 480px;
+            line-height: 1.75;
+        }
+
+        /* ─── Waveform viz ─── */
+        .waveform-banner {
+            margin: 0 0 3.5rem;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            overflow: hidden;
+            animation: fadeIn 1.2s ease 0.4s both;
+        }
+
+        .wf-bar {
+            flex-shrink: 0;
+            width: 3px;
+            border-radius: 2px;
+            background: var(--border-mid);
+            animation: wfAnimate 2s ease-in-out infinite;
+        }
+
+        .wf-bar.active {
+            background: var(--accent);
+        }
+
+        @keyframes wfAnimate {
+            0%, 100% { transform: scaleY(var(--scale-a, 0.3)); }
+            50% { transform: scaleY(var(--scale-b, 1)); }
+        }
+
+        /* ─── Cards ─── */
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5px;
+            background: var(--border-subtle);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            animation: fadeSlideUp 1s var(--ease-out) 0.2s both;
+        }
+
+        @media (max-width: 640px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-surface);
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: background 0.3s ease;
+        }
+
+        .panel:hover {
+            background: var(--bg-raised);
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .panel:hover::before {
+            opacity: 1;
+        }
+
+        .panel-type-tag {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-type-tag .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.7); }
+        }
+
+        .panel-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.4rem;
+            color: var(--text-primary);
+        }
+
+        .panel-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-weight: 300;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+
+        /* ─── Drop Zone ─── */
+        .drop-zone {
+            border: 1.5px dashed var(--border-mid);
+            border-radius: var(--radius-md);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            position: relative;
+            transition: border-color 0.25s ease, background 0.25s ease;
+            margin-bottom: 1.75rem;
+            min-height: 130px;
+            text-align: center;
+        }
+
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .drop-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .drop-icon {
+            width: 32px;
+            height: 32px;
+            color: var(--text-muted);
+            transition: color 0.25s;
+        }
+
+        .drop-zone:hover .drop-icon,
+        .drop-zone.drag-over .drop-icon {
+            color: var(--accent);
+        }
+
+        .drop-primary {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: -0.01em;
+        }
+
+        .drop-hint {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .file-selected {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--accent);
+            display: none;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        /* ─── Intensity Slider ─── */
+        .control-row {
+            margin-bottom: 2rem;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 12px;
+        }
+
+        .control-name {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .control-val {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .slider-track-wrap {
+            position: relative;
+            height: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .slider-custom {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 2px;
+            background: var(--border-mid);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+        }
+
+        .slider-custom::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--bg-void);
+            border: 2px solid var(--accent);
+            cursor: grab;
+            transition: transform 0.15s var(--ease-spring), box-shadow 0.15s ease;
+            box-shadow: 0 0 0 0 var(--accent-glow);
+        }
+
+        .slider-custom::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.3);
+            box-shadow: 0 0 0 6px var(--accent-glow);
+        }
+
+        .slider-custom::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--bg-void);
+            border: 2px solid var(--accent);
+            cursor: grab;
+            box-shadow: none;
+        }
+
+        .slider-fill {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 2px;
+            background: var(--accent);
+            border-radius: 2px;
+            pointer-events: none;
+            z-index: 0;
+            transition: width 0.05s;
+        }
+
+        .intensity-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .intensity-label {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* ─── Submit Button ─── */
+        .btn-process {
+            width: 100%;
+            padding: 0;
+            height: 52px;
+            background: var(--accent);
+            color: var(--bg-void);
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.15s var(--ease-spring), box-shadow 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-process::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.15);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .btn-process:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px var(--accent-glow);
+        }
+
+        .btn-process:hover::before { opacity: 1; }
+        .btn-process:active { transform: translateY(0); }
+        .btn-process:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .btn-process .btn-text { position: relative; z-index: 1; }
+
+        /* Processing state */
+        .btn-process .spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0,0,0,0.3);
+            border-top-color: var(--bg-void);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        .btn-process.processing .spinner { display: block; }
+        .btn-process.processing .btn-icon { display: none; }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ─── Status message ─── */
+        .status-msg {
+            margin-top: 1rem;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 1.5;
+            display: none;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .status-msg.error {
+            background: var(--error-dim);
+            border: 1px solid rgba(255,92,92,0.2);
+            color: var(--error);
+        }
+
+        .status-msg.success {
+            background: var(--accent-dim);
+            border: 1px solid rgba(0,229,160,0.2);
+            color: var(--accent);
+        }
+
+        /* ─── Divider ─── */
+        .panel-divider {
+            width: 1.5px;
+            background: var(--bg-void);
+        }
+
+        /* ─── Footer strip ─── */
+        .footer-strip {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            animation: fadeIn 1s ease 0.5s both;
+        }
+
+        .footer-note {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .footer-stats {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .stat-item {
+            text-align: right;
+        }
+
+        .stat-val {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: -0.02em;
+        }
+
+        .stat-key {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        /* ─── Animations ─── */
+        @keyframes fadeSlideDown {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ─── Progress bar ─── */
+        .progress-wrap {
+            display: none;
+            height: 2px;
+            background: var(--border-subtle);
+            border-radius: 2px;
+            margin-top: 14px;
+            overflow: hidden;
+        }
+
+        .progress-wrap.visible { display: block; }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            animation: progressIndeterminate 1.6s ease-in-out infinite;
+        }
+
+        @keyframes progressIndeterminate {
+            0% { transform: translateX(-100%); width: 60%; }
+            100% { transform: translateX(200%); width: 60%; }
+        }
+
+        /* Success download pill */
+        .download-pill {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent-dim);
+            border: 1px solid rgba(0,229,160,0.25);
+            border-radius: 100px;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--accent);
+            margin-top: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+            width: fit-content;
+        }
+
+        .download-pill:hover {
+            background: rgba(0,229,160,0.2);
+        }
+
+        .download-pill svg {
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+    <!-- Header -->
+    <header class="site-header">
+        <div class="logo-mark">
+            <div class="logo-icon">
+                <div class="logo-waves">
+                    <div class="logo-bar"></div>
+                    <div class="logo-bar"></div>
+                    <div class="logo-bar"></div>
+                    <div class="logo-bar"></div>
+                    <div class="logo-bar"></div>
+                </div>
+            </div>
+            <span class="logo-text">Noise<span>Zero</span></span>
+        </div>
+        <span class="header-badge">AI Studio v2</span>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-eyebrow">Neural Denoising Engine</div>
+        <h1 class="hero-title">Remove<br><em>every</em><br>frequency.</h1>
+        <p class="hero-sub">Upload your audio or video and let the AI strip background noise, static, and hiss — down to silence.</p>
+    </section>
+
+    <!-- Waveform Banner -->
+    <div class="waveform-banner" id="waveform"></div>
+
+    <!-- Panel Grid -->
+    <div class="card-grid">
+
+        <!-- Audio Panel -->
+        <div class="panel" id="audio-panel">
+            <div class="panel-type-tag"><span class="dot"></span> Audio</div>
+            <div class="panel-title">Denoise Audio</div>
+            <p class="panel-desc">WAV · MP3 · FLAC · AAC · OGG</p>
+
+            <form id="audio-form">
+                <div class="drop-zone" id="audio-drop">
+                    <input type="file" id="audio-file" name="file" accept="audio/*" required>
+                    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M9 18V5l12-2v13M9 18c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-2c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"/>
+                    </svg>
+                    <div class="drop-primary">Drop file or click to browse</div>
+                    <div class="drop-hint">Max 500MB per file</div>
+                    <div class="file-selected" id="audio-filename">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        <span></span>
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <div class="control-label">
+                        <span class="control-name">Intensity</span>
+                        <span class="control-val" id="audio-intensity-val">1.0</span>
+                    </div>
+                    <div class="slider-track-wrap">
+                        <div class="slider-fill" id="audio-slider-fill" style="width: 100%"></div>
+                        <input type="range" class="slider-custom" id="audio-intensity" name="intensity_ratio"
+                               min="0.0" max="1.0" step="0.1" value="1.0"
+                               oninput="updateSlider('audio')">
+                    </div>
+                    <div class="intensity-labels">
+                        <span class="intensity-label">Subtle</span>
+                        <span class="intensity-label">Maximum</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-process" id="audio-btn">
+                    <svg class="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    <div class="spinner"></div>
+                    <span class="btn-text">Process Audio</span>
+                </button>
+
+                <div class="progress-wrap" id="audio-progress"><div class="progress-bar"></div></div>
+                <div class="status-msg error" id="audio-error"></div>
+            </form>
+        </div>
+
+        <!-- Video Panel -->
+        <div class="panel" id="video-panel">
+            <div class="panel-type-tag"><span class="dot" style="background:var(--accent-2); box-shadow: 0 0 8px var(--accent-2);"></span> Video</div>
+            <div class="panel-title">Denoise Video</div>
+            <p class="panel-desc">MP4 · MOV · MKV · AVI · WEBM</p>
+
+            <form id="video-form">
+                <div class="drop-zone" id="video-drop">
+                    <input type="file" id="video-file" name="file" accept="video/*" required>
+                    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>
+                    </svg>
+                    <div class="drop-primary">Drop file or click to browse</div>
+                    <div class="drop-hint">Max 2GB per file</div>
+                    <div class="file-selected" id="video-filename">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        <span></span>
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <div class="control-label">
+                        <span class="control-name">Intensity</span>
+                        <span class="control-val" id="video-intensity-val">1.0</span>
+                    </div>
+                    <div class="slider-track-wrap">
+                        <div class="slider-fill" id="video-slider-fill" style="width: 100%"></div>
+                        <input type="range" class="slider-custom" id="video-intensity" name="intensity_ratio"
+                               min="0.0" max="1.0" step="0.1" value="1.0"
+                               oninput="updateSlider('video')">
+                    </div>
+                    <div class="intensity-labels">
+                        <span class="intensity-label">Subtle</span>
+                        <span class="intensity-label">Maximum</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-process" id="video-btn" style="background: var(--accent-2);">
+                    <svg class="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    <div class="spinner"></div>
+                    <span class="btn-text">Process Video</span>
+                </button>
+
+                <div class="progress-wrap" id="video-progress"><div class="progress-bar"></div></div>
+                <div class="status-msg error" id="video-error"></div>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-strip">
+        <p class="footer-note">Built on RNNoise · DeepFilterNet · FFmpeg pipeline</p>
+        <div class="footer-stats">
+            <div class="stat-item">
+                <div class="stat-val">44.1kHz</div>
+                <div class="stat-key">Max Sample Rate</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val">4K</div>
+                <div class="stat-key">Video Support</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    /* ── Waveform generator ── */
+    (function buildWave() {
+        const container = document.getElementById('waveform');
+        const totalBars = Math.floor(container.offsetWidth / 5) || 160;
+        const bars = [];
+        for (let i = 0; i < totalBars; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'wf-bar';
+            const baseHeight = Math.random();
+            const h = 8 + baseHeight * 48;
+            bar.style.height = h + 'px';
+            const scaleA = 0.2 + Math.random() * 0.4;
+            const scaleB = 0.6 + Math.random() * 0.4;
+            bar.style.setProperty('--scale-a', scaleA);
+            bar.style.setProperty('--scale-b', scaleB);
+            bar.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+            bar.style.animationDelay = -(Math.random() * 3) + 's';
+            if (Math.random() > 0.65) bar.classList.add('active');
+            container.appendChild(bar);
+            bars.push(bar);
+        }
+    })();
+
+    /* ── Slider update ── */
+    function updateSlider(type) {
+        const slider = document.getElementById(type + '-intensity');
+        const val = parseFloat(slider.value);
+        document.getElementById(type + '-intensity-val').textContent = val.toFixed(1);
+        const pct = ((val - slider.min) / (slider.max - slider.min)) * 100;
+        document.getElementById(type + '-slider-fill').style.width = pct + '%';
+    }
+
+    /* ── Drag-over state ── */
+    ['audio-drop', 'video-drop'].forEach(id => {
+        const zone = document.getElementById(id);
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', () => zone.classList.remove('drag-over'));
+    });
+
+    /* ── File selection display ── */
+    function bindFileInput(inputId, nameId) {
+        const input = document.getElementById(inputId);
+        const nameEl = document.getElementById(nameId);
+        input.addEventListener('change', () => {
+            if (input.files[0]) {
+                nameEl.querySelector('span').textContent = input.files[0].name;
+                nameEl.style.display = 'flex';
+            }
+        });
+    }
+    bindFileInput('audio-file', 'audio-filename');
+    bindFileInput('video-file', 'video-filename');
+
+    /* ── Form submission ── */
+    function setupForm(formId, endpoint, btnId, progressId, errorId) {
+        const form = document.getElementById(formId);
+        const btn = document.getElementById(btnId);
+        const progressWrap = document.getElementById(progressId);
+        const errorDiv = document.getElementById(errorId);
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            errorDiv.style.display = 'none';
+            btn.disabled = true;
+            btn.classList.add('processing');
+            progressWrap.classList.add('visible');
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.detail || 'Server returned ' + response.status);
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+
+                const cd = response.headers.get('content-disposition');
+                let filename = 'denoised_output';
+                if (cd) {
+                    const m = cd.match(/filename="(.+)"/);
+                    if (m && m[1]) filename = m[1];
+                }
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+
+            } catch (err) {
+                errorDiv.textContent = err.message;
+                errorDiv.style.display = 'flex';
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('processing');
+                progressWrap.classList.remove('visible');
+            }
+        });
+    }
+
+    setupForm('audio-form', '/denoise/denoise-audio', 'audio-btn', 'audio-progress', 'audio-error');
+    setupForm('video-form', '/denoise/denoise-video', 'video-btn', 'video-progress', 'video-error');
+</script>
+
+</body>
+</html>
