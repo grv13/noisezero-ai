@@ -20,6 +20,11 @@ templates = Jinja2Templates(directory=str(project_root / "templates"))
 app.include_router(audio_denoise.router, prefix="/denoise", tags=["Audio Denoising"])
 app.include_router(video_denoise.router, prefix="/denoise", tags=["Video Denoising"])
 
+@app.get("/health", tags=["Health Check"])
+async def health_check():
+    """Simple health check endpoint to confirm the service is running."""
+    return {"status": "ok"}
+
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def root(request: Request):
     """Serves the main UI page."""
