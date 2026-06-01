@@ -24,3 +24,5 @@ docker-debug.log
 
 # Temporary files
 __pycache__/
+
+.venv/

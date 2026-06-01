@@ -1,46 +1,34 @@
-# =========================================================================
-# Stage 1: Build Stage
-# =========================================================================
-# Use a Python base image. The 'slim' variant is a good balance of size and functionality.
-FROM python:3.11-slim as builder
+# Use an official Python runtime as a parent image
+FROM python:3.12-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Create a virtual environment to isolate dependencies
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+# Install system dependencies
+# - ffmpeg is required by pydub for audio format conversion.
+# - git is included in case of any dependencies that might need it.
+# - build-essential is for any packages that need to be compiled from source.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg git build-essential \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file and install dependencies
-# This is done first to leverage Docker's layer caching.
+# Install Python dependencies
+# First, copy only the requirements file to leverage Docker's cache.
 COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application source code
+# Copy the rest of the application's code into the container
 COPY . .
 
-# =========================================================================
-# Stage 2: Production Stage
-# =========================================================================
-# Use a minimal base image for a smaller and more secure final image.
-FROM python:3.11-slim
-
-# Create a non-root user for security
-RUN useradd --create-home appuser
-USER appuser
-
-WORKDIR /home/appuser/app
-
-# Copy the virtual environment and source code from the builder stage
-COPY --from=builder /opt/venv /opt/venv
-COPY --from=builder /app .
-
-# Make the virtual environment's Python the default
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Expose the port the app runs on (uvicorn's default is 8000)
+# Expose the port the app runs on
 EXPOSE 8000
 
-# Command to run the FastAPI application using uvicorn
-# The host 0.0.0.0 is necessary to make it accessible from outside the container.
+# Define the command to run the application
+# Use uvicorn to run the FastAPI app, binding to all interfaces on port 8000.
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
