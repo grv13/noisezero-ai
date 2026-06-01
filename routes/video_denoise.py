@@ -4,11 +4,12 @@ import sys
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, File, UploadFile, HTTPException, Query
+from fastapi import APIRouter, File, UploadFile, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
 from ai_clients.bnr.scripts.bnr import run_client as run_bnr_processing
+from limiter import limiter
 from config import (
     TEMP_DIR,
     NVIDIA_API_KEY,
@@ -32,9 +33,11 @@ router = APIRouter()
     },
     summary="Remove background noise from a video file"
 )
+@limiter.limit("50/minute")
 async def denoise_video(
+    request: Request,
     file: UploadFile = File(..., description="Video file (e.g., MP4, MOV, etc.)."),
-    intensity_ratio: float = Query(1.0, ge=0.0, le=1.0, description="Denoising intensity (0.0 to 1.0). Default is 1.0 (max).")
+    intensity_ratio: float = Query(1.0, ge=0.0, le=1.0, description="Denoising intensity (0.0 to 1.0). Default is 1.0 (max)."),
 ):
     if not FFMPEG_PATH:
         raise HTTPException(status_code=500, detail="FFmpeg is not installed, which is required for video processing.")

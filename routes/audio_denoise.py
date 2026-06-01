@@ -5,12 +5,13 @@ from pathlib import Path
 import librosa
 import soundfile as sf
 import sys
-from fastapi import APIRouter, File, UploadFile, HTTPException, Query
+from fastapi import APIRouter, File, UploadFile, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from pydub import AudioSegment
 from starlette.background import BackgroundTask
 
 from ai_clients.bnr.scripts.bnr import run_client as run_bnr_processing
+from limiter import limiter
 from config import (
     TEMP_DIR,
     NVIDIA_API_KEY,
@@ -33,7 +34,9 @@ router = APIRouter()
     },
     summary="Remove background noise from an audio file"
 )
+@limiter.limit("50/minute")
 async def denoise_audio(
+    request: Request,
     file: UploadFile = File(..., description="Audio file (WAV, MP3, etc.). Will be converted to WAV for processing."),
     intensity_ratio: float = Query(1.0, ge=0.0, le=1.0, description="Denoising intensity (0.0 to 1.0). Default is 1.0 (max).")
 ):

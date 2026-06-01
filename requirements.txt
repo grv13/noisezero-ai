@@ -11,3 +11,4 @@ tqdm==4.67.1
 librosa
 pydub
 jinja2
+slowapi
