@@ -3,8 +3,10 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from slowapi.errors import RateLimitExceeded
 
 from routes import audio_denoise, video_denoise
+from limiter import limiter, rate_limit_exceeded_handler
 
 # Add the project root to the Python path to allow for absolute imports
 project_root = Path(__file__).resolve().parent
@@ -14,6 +16,9 @@ app = FastAPI(
     title="NVIDIA BNR API",
     description="A FastAPI wrapper for the NVIDIA Background Noise Removal NIM.",
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 templates = Jinja2Templates(directory=str(project_root / "templates"))
 
