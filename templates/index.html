@@ -1,952 +1,1168 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NoiseZero — AI Denoising Studio</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NoiseZero — AI Audio Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-        /* ══════════════════════════════════════
-           THEME TOKENS
-        ══════════════════════════════════════ */
-        :root {
-            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-            --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
-            --font-display: 'Syne', sans-serif;
-            --font-mono:    'DM Mono', monospace;
-            --radius-sm: 4px; --radius-md: 8px;
-            --radius-lg: 16px; --radius-xl: 24px;
-            --accent:   #00E5A0;
-            --accent-2: #0099FF;
-            --accent-dim:  rgba(0,229,160,0.12);
-            --accent-glow: rgba(0,229,160,0.28);
-            --error:     #FF5C5C;
-            --error-dim: rgba(255,92,92,0.1);
-        }
+/* ═══════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════ */
+:root{
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --font-display:'Syne',sans-serif;
+  --font-mono:'DM Mono',monospace;
+  --r-sm:4px;--r-md:8px;--r-lg:16px;--r-xl:24px;
+  --accent:#00E5A0;
+  --accent-2:#0099FF;
+  --accent-3:#B06EFF;
+  --accent-dim:rgba(0,229,160,.12);
+  --accent-glow:rgba(0,229,160,.28);
+  --a2-dim:rgba(0,153,255,.12);
+  --a2-glow:rgba(0,153,255,.28);
+  --a3-dim:rgba(176,110,255,.12);
+  --a3-glow:rgba(176,110,255,.28);
+  --error:#FF5C5C;
+  --error-dim:rgba(255,92,92,.1);
+}
+[data-theme="dark"]{
+  --bg-void:#080A0E;--bg-surface:#0D1117;--bg-raised:#141920;--bg-hover:#1A2130;
+  --border-subtle:rgba(255,255,255,.06);--border-mid:rgba(255,255,255,.12);--border-strong:rgba(255,255,255,.22);
+  --text-primary:#EEF0F4;--text-secondary:#8A94A6;--text-muted:#4A5568;
+  --grid-line:rgba(255,255,255,.018);--orb-opacity:.18;
+}
+[data-theme="light"]{
+  --bg-void:#F0F2F5;--bg-surface:#FFFFFF;--bg-raised:#F7F9FC;--bg-hover:#EEF1F6;
+  --border-subtle:rgba(0,0,0,.06);--border-mid:rgba(0,0,0,.10);--border-strong:rgba(0,0,0,.18);
+  --text-primary:#0D1117;--text-secondary:#4A5568;--text-muted:#9BA8BC;
+  --grid-line:rgba(0,0,0,.025);--orb-opacity:.10;
+}
 
-        /* ── Dark ── */
-        [data-theme="dark"] {
-            --bg-void:    #080A0E;
-            --bg-surface: #0D1117;
-            --bg-raised:  #141920;
-            --bg-hover:   #1A2130;
-            --border-subtle: rgba(255,255,255,0.06);
-            --border-mid:    rgba(255,255,255,0.12);
-            --border-strong: rgba(255,255,255,0.22);
-            --text-primary:   #EEF0F4;
-            --text-secondary: #8A94A6;
-            --text-muted:     #4A5568;
-            --grid-line: rgba(255,255,255,0.018);
-            --orb-opacity: 0.18;
-            --ring-stroke: rgba(0,229,160,0.07);
-        }
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-display);
+  background:var(--bg-void);color:var(--text-primary);
+  min-height:100vh;overflow-x:hidden;
+  transition:background .4s,color .4s;
+}
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
+  background-size:80px 80px;pointer-events:none;z-index:0;
+}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
 
-        /* ── Light ── */
-        [data-theme="light"] {
-            --bg-void:    #F0F2F5;
-            --bg-surface: #FFFFFF;
-            --bg-raised:  #F7F9FC;
-            --bg-hover:   #EEF1F6;
-            --border-subtle: rgba(0,0,0,0.06);
-            --border-mid:    rgba(0,0,0,0.10);
-            --border-strong: rgba(0,0,0,0.18);
-            --text-primary:   #0D1117;
-            --text-secondary: #4A5568;
-            --text-muted:     #9BA8BC;
-            --grid-line: rgba(0,0,0,0.025);
-            --orb-opacity: 0.10;
-            --ring-stroke: rgba(0,229,160,0.12);
-        }
+/* ═══════════════════════════════════════
+   NAV
+═══════════════════════════════════════ */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2.5rem;height:64px;
+  background:rgba(8,10,14,.7);
+  border-bottom:1px solid var(--border-subtle);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  transition:background .4s,border-color .4s;
+}
+[data-theme="light"] .nav{background:rgba(240,242,245,.75)}
+.nav-logo{display:flex;align-items:center;gap:10px;cursor:pointer;text-decoration:none}
+.nav-logo-icon{
+  width:32px;height:32px;border:1.5px solid var(--accent);border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.nav-logo-waves{display:flex;align-items:center;gap:2px;padding:0 3px}
+.nav-lb{width:2.5px;border-radius:2px;background:var(--accent);animation:waveIdle 1.4s ease-in-out infinite}
+.nav-lb:nth-child(1){height:6px;animation-delay:0s}
+.nav-lb:nth-child(2){height:13px;animation-delay:.15s}
+.nav-lb:nth-child(3){height:8px;animation-delay:.3s}
+.nav-lb:nth-child(4){height:16px;animation-delay:.1s}
+.nav-lb:nth-child(5){height:10px;animation-delay:.25s}
+@keyframes waveIdle{0%,100%{transform:scaleY(1);opacity:.6}50%{transform:scaleY(.5);opacity:1}}
+.nav-logo-text{font-size:16px;font-weight:700;letter-spacing:-.02em;color:var(--text-primary)}
+.nav-logo-text span{color:var(--accent)}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-link{
+  font-family:var(--font-mono);font-size:11px;font-weight:500;
+  letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text-muted);padding:8px 14px;border-radius:var(--r-md);
+  border:none;background:transparent;cursor:pointer;
+  transition:color .2s,background .2s;
+}
+.nav-link:hover{color:var(--text-primary);background:var(--border-subtle)}
+.nav-link.active{color:var(--accent);background:var(--accent-dim)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.theme-toggle{
+  width:46px;height:24px;background:var(--bg-raised);border:1px solid var(--border-mid);
+  border-radius:100px;cursor:pointer;position:relative;display:flex;align-items:center;
+  transition:background .3s,border-color .3s;flex-shrink:0;
+}
+.theme-toggle-knob{
+  width:16px;height:16px;border-radius:50%;background:var(--accent);
+  position:absolute;left:4px;
+  transition:transform .35s var(--ease-spring);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+[data-theme="light"] .theme-toggle-knob{transform:translateX(22px)}
+.toggle-icon{width:9px;height:9px;position:absolute;transition:opacity .2s,transform .3s}
+.icon-moon{opacity:1}
+.icon-sun{opacity:0;transform:rotate(90deg) scale(.5)}
+[data-theme="light"] .icon-moon{opacity:0;transform:rotate(-90deg) scale(.5)}
+[data-theme="light"] .icon-sun{opacity:1;transform:rotate(0) scale(1)}
 
-        html { scroll-behavior: smooth; }
+/* ═══════════════════════════════════════
+   PAGE / VIEW SYSTEM
+═══════════════════════════════════════ */
+.page-shell{position:relative;z-index:1;padding-top:64px}
+.view{display:none;opacity:0;transform:translateY(14px);transition:opacity .45s var(--ease-out),transform .45s var(--ease-out)}
+.view.active{display:block}
+.view.visible{opacity:1;transform:translateY(0)}
+.wrap{max-width:960px;margin:0 auto;padding:0 2rem 6rem}
 
-        body {
-            font-family: var(--font-display);
-            background-color: var(--bg-void);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-            transition: background-color 0.4s ease, color 0.4s ease;
-        }
+/* ═══════════════════════════════════════
+   REVEAL
+═══════════════════════════════════════ */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .65s var(--ease-out),transform .65s var(--ease-out)}
+.reveal.visible{opacity:1;transform:translateY(0)}
 
-        /* ── Grid lines ── */
-        body::after {
-            content: '';
-            position: fixed; inset: 0;
-            background-image:
-                linear-gradient(var(--grid-line) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-            background-size: 80px 80px;
-            pointer-events: none;
-            z-index: 0;
-            transition: opacity 0.4s;
-        }
+/* ═══════════════════════════════════════
+   HOME — HERO
+═══════════════════════════════════════ */
+.hero{padding:7rem 0 5rem;animation:fadeSlideUp .9s var(--ease-out) .1s both}
+.hero-eyebrow{
+  font-family:var(--font-mono);font-size:11px;color:var(--accent);
+  letter-spacing:.14em;text-transform:uppercase;margin-bottom:1.5rem;
+  display:flex;align-items:center;gap:12px;
+}
+.hero-eyebrow::before{content:'';display:inline-block;width:32px;height:1px;background:var(--accent)}
+.hero-title{
+  font-size:clamp(3rem,7vw,5.5rem);font-weight:800;
+  line-height:.92;letter-spacing:-.05em;margin-bottom:2rem;
+}
+.hero-title em{font-style:normal;color:transparent;-webkit-text-stroke:1.5px var(--text-secondary)}
+.hero-sub{font-size:16px;color:var(--text-secondary);max-width:520px;line-height:1.8;margin-bottom:3rem}
+.hero-cta-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.btn-primary{
+  height:50px;padding:0 28px;background:var(--accent);color:var(--bg-void);
+  border:none;border-radius:var(--r-md);font-family:var(--font-display);
+  font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  cursor:pointer;display:flex;align-items:center;gap:8px;
+  transition:transform .15s var(--ease-spring),box-shadow .2s;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--accent-glow)}
+.btn-ghost{
+  height:50px;padding:0 24px;
+  background:transparent;color:var(--text-secondary);
+  border:1px solid var(--border-mid);border-radius:var(--r-md);
+  font-family:var(--font-mono);font-size:11px;font-weight:500;
+  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+  transition:color .2s,border-color .2s,background .2s;
+}
+.btn-ghost:hover{color:var(--text-primary);border-color:var(--border-strong);background:var(--border-subtle)}
 
-        /* ══════════════════════════════════════
-           PARALLAX CANVAS
-        ══════════════════════════════════════ */
-        #bg-canvas {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-        }
+/* ═══════════════════════════════════════
+   HOME — WAVEFORM
+═══════════════════════════════════════ */
+.waveform-banner{
+  margin:0 0 5rem;height:64px;
+  display:flex;align-items:center;gap:2px;overflow:hidden;
+}
+.wf-bar{
+  flex-shrink:0;width:3px;border-radius:2px;background:var(--border-mid);
+  animation:wfAnimate 2s ease-in-out infinite;transition:background .4s;
+}
+.wf-bar.active{background:var(--accent)}
+@keyframes wfAnimate{
+  0%,100%{transform:scaleY(var(--sa,.3))}
+  50%{transform:scaleY(var(--sb,1))}
+}
 
-        /* ══════════════════════════════════════
-           THEME TOGGLE
-        ══════════════════════════════════════ */
-        .theme-toggle {
-            width: 48px;
-            height: 26px;
-            background: var(--bg-raised);
-            border: 1px solid var(--border-mid);
-            border-radius: 100px;
-            cursor: pointer;
-            position: relative;
-            display: flex;
-            align-items: center;
-            padding: 3px;
-            transition: background 0.3s, border-color 0.3s;
-            flex-shrink: 0;
-        }
+/* ═══════════════════════════════════════
+   HOME — SERVICE CARDS
+═══════════════════════════════════════ */
+.section-label{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text-muted);margin-bottom:2.5rem;
+  display:flex;align-items:center;gap:12px;
+}
+.section-label::before{content:'';flex:1;height:1px;background:var(--border-subtle)}
 
-        .theme-toggle-knob {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--accent);
-            position: absolute;
-            left: 4px;
-            transition: transform 0.35s var(--ease-spring), background 0.3s;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
-        }
+.services-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--border-subtle);border-radius:var(--r-xl);overflow:hidden;
+  border:1px solid var(--border-subtle);}
+@media(max-width:700px){.services-grid{grid-template-columns:1fr}}
 
-        [data-theme="light"] .theme-toggle-knob {
-            transform: translateX(22px);
-        }
+.svc-card{
+  background:var(--bg-surface);padding:2.5rem 2rem;position:relative;overflow:hidden;
+  cursor:pointer;transition:background .25s;
+}
+.svc-card:hover{background:var(--bg-raised)}
+.svc-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--card-accent),transparent);
+  opacity:0;transition:opacity .3s;
+}
+.svc-card:hover::before{opacity:1}
+.svc-card-icon{
+  width:44px;height:44px;border-radius:var(--r-md);
+  background:var(--accent-dim);border:1px solid rgba(0,229,160,.18);
+  display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;
+  transition:transform .25s var(--ease-spring),box-shadow .25s;
+}
+.svc-card:hover .svc-card-icon{transform:scale(1.08);box-shadow:0 4px 20px var(--accent-glow)}
+.svc-card-tag{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-muted);margin-bottom:.6rem;
+}
+.svc-card-title{font-size:18px;font-weight:700;letter-spacing:-.02em;margin-bottom:.75rem}
+.svc-card-desc{font-size:13px;color:var(--text-secondary);line-height:1.75;margin-bottom:1.75rem}
+.svc-card-specs{display:flex;flex-direction:column;gap:6px;margin-bottom:2rem}
+.spec-row{display:flex;align-items:baseline;gap:8px}
+.spec-key{
+  font-family:var(--font-mono);font-size:10px;color:var(--text-muted);
+  letter-spacing:.08em;text-transform:uppercase;min-width:72px;
+}
+.spec-val{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary)}
+.svc-card-link{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--font-mono);font-size:11px;font-weight:500;
+  letter-spacing:.06em;text-transform:uppercase;
+  color:var(--accent);background:none;border:none;cursor:pointer;padding:0;
+  transition:gap .2s;
+}
+.svc-card-link:hover{gap:10px}
+.svc-card-link svg{transition:transform .2s}
+.svc-card-link:hover svg{transform:translateX(3px)}
 
-        .toggle-icon {
-            width: 10px; height: 10px;
-            position: absolute;
-            transition: opacity 0.2s, transform 0.3s;
-        }
-        .icon-moon { opacity: 1; }
-        .icon-sun  { opacity: 0; transform: rotate(90deg) scale(0.5); }
-        [data-theme="light"] .icon-moon { opacity: 0; transform: rotate(-90deg) scale(0.5); }
-        [data-theme="light"] .icon-sun  { opacity: 1; transform: rotate(0) scale(1); }
+/* ═══════════════════════════════════════
+   HOME — TECH STRIP
+═══════════════════════════════════════ */
+.tech-strip{
+  margin-top:5rem;display:grid;grid-template-columns:repeat(4,1fr);
+  gap:1px;background:var(--border-subtle);
+  border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border-subtle);
+}
+@media(max-width:600px){.tech-strip{grid-template-columns:repeat(2,1fr)}}
+.tech-cell{
+  background:var(--bg-surface);padding:1.75rem 1.5rem;
+  transition:background .25s;
+}
+.tech-cell:hover{background:var(--bg-raised)}
+.tech-num{font-size:26px;font-weight:800;letter-spacing:-.04em;color:var(--text-primary);margin-bottom:.2rem}
+.tech-num span{font-size:14px;font-weight:500;color:var(--accent);letter-spacing:0}
+.tech-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
 
-        /* ══════════════════════════════════════
-           LAYOUT
-        ══════════════════════════════════════ */
-        .page-wrap {
-            position: relative;
-            z-index: 1;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem 6rem;
-        }
+/* ═══════════════════════════════════════
+   HOME — PIPELINE
+═══════════════════════════════════════ */
+.pipeline-section{margin-top:5rem}
+.pipeline-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--border-subtle);border-radius:var(--r-lg);overflow:hidden;
+  border:1px solid var(--border-subtle);}
+@media(max-width:620px){.pipeline-steps{grid-template-columns:1fr}}
+.step{background:var(--bg-surface);padding:2rem 1.75rem;position:relative}
+.step-num{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;
+  color:var(--text-muted);text-transform:uppercase;margin-bottom:1.2rem;
+}
+.step-title{font-size:15px;font-weight:700;letter-spacing:-.02em;margin-bottom:.6rem}
+.step-desc{font-size:13px;color:var(--text-secondary);line-height:1.7}
+.step-connector{
+  position:absolute;right:-1px;top:50%;transform:translateY(-50%);
+  width:1px;height:40%;background:var(--accent);opacity:.3;
+}
+@media(max-width:620px){.step-connector{display:none}}
 
-        /* ══════════════════════════════════════
-           HEADER
-        ══════════════════════════════════════ */
-        .site-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 2.5rem 0 4rem;
-            animation: fadeSlideDown 0.8s var(--ease-out) both;
-        }
+/* ═══════════════════════════════════════
+   PAGE HEADERS (tool pages)
+═══════════════════════════════════════ */
+.page-hero{padding:4rem 0 3.5rem;animation:fadeSlideUp .8s var(--ease-out) both}
+.page-eyebrow{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;margin-bottom:1.2rem;
+  display:flex;align-items:center;gap:10px;
+}
+.page-eyebrow .dot{width:6px;height:6px;border-radius:50%;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+.page-title{font-size:clamp(2.2rem,5vw,3.6rem);font-weight:800;letter-spacing:-.04em;margin-bottom:1rem;line-height:1}
+.page-sub{font-size:14px;color:var(--text-secondary);max-width:540px;line-height:1.8}
 
-        .header-left { display: flex; align-items: center; gap: 12px; }
+/* ═══════════════════════════════════════
+   TOOL PANELS (shared)
+═══════════════════════════════════════ */
+.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;
+  background:var(--border-subtle);border-radius:var(--r-xl);overflow:hidden;
+  border:1px solid var(--border-subtle)}
+@media(max-width:640px){.tool-grid{grid-template-columns:1fr}}
+.panel{
+  background:var(--bg-surface);padding:2.5rem;position:relative;overflow:hidden;
+  transition:background .25s;
+}
+.panel:hover{background:var(--bg-raised)}
+.panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--panel-accent,var(--accent)),transparent);
+  opacity:0;transition:opacity .35s;
+}
+.panel:hover::before{opacity:1}
+.panel-tag{
+  font-family:var(--font-mono);font-size:10px;font-weight:500;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);
+  margin-bottom:1.8rem;display:flex;align-items:center;gap:8px;
+}
+.dot-sm{width:6px;height:6px;border-radius:50%;animation:pulse 2s ease-in-out infinite}
+.panel-title{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:.35rem}
+.panel-formats{
+  font-family:var(--font-mono);font-size:12px;color:var(--text-muted);
+  margin-bottom:2.25rem;line-height:1.6;
+}
 
-        .logo-icon {
-            width: 36px; height: 36px;
-            border: 1.5px solid var(--accent);
-            border-radius: var(--radius-sm);
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
-        }
-        .logo-waves { display: flex; align-items: center; gap: 2px; padding: 0 4px; }
-        .logo-bar {
-            width: 3px; border-radius: 2px;
-            background: var(--accent);
-            animation: waveIdle 1.4s ease-in-out infinite;
-        }
-        .logo-bar:nth-child(1){ height:8px;  animation-delay:0s; }
-        .logo-bar:nth-child(2){ height:16px; animation-delay:.15s; }
-        .logo-bar:nth-child(3){ height:10px; animation-delay:.3s; }
-        .logo-bar:nth-child(4){ height:20px; animation-delay:.1s; }
-        .logo-bar:nth-child(5){ height:12px; animation-delay:.25s; }
-        @keyframes waveIdle {
-            0%,100%{ transform:scaleY(1);   opacity:.6; }
-            50%    { transform:scaleY(.5);  opacity:1; }
-        }
+/* drop zone */
+.drop-zone{
+  border:1.5px dashed var(--border-mid);border-radius:var(--r-md);
+  padding:2rem 1.25rem;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:border-color .25s,background .25s;
+  margin-bottom:1.6rem;min-height:120px;text-align:center;
+}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--panel-accent,var(--accent));background:var(--accent-dim)}
+.drop-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{width:28px;height:28px;color:var(--text-muted);transition:color .25s}
+.drop-zone:hover .drop-icon,.drop-zone.drag-over .drop-icon{color:var(--panel-accent,var(--accent))}
+.drop-primary{font-size:13px;font-weight:600;color:var(--text-secondary)}
+.drop-hint{font-family:var(--font-mono);font-size:11px;color:var(--text-muted)}
+.file-selected{font-family:var(--font-mono);font-size:11px;color:var(--panel-accent,var(--accent));display:none;align-items:center;gap:6px;margin-top:2px}
 
-        .logo-text { font-size:18px; font-weight:700; letter-spacing:-.02em; color:var(--text-primary); }
-        .logo-text span { color:var(--accent); }
+/* control */
+.control-row{margin-bottom:1.8rem}
+.control-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.control-name{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-secondary)}
+.control-val{font-family:var(--font-mono);font-size:13px;color:var(--panel-accent,var(--accent));font-weight:500}
+.slider-wrap{position:relative;height:20px;display:flex;align-items:center}
+.slider{
+  -webkit-appearance:none;appearance:none;width:100%;height:2px;
+  background:var(--border-mid);border-radius:2px;outline:none;cursor:pointer;
+  position:relative;z-index:1;
+}
+.slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--bg-surface);border:2px solid var(--panel-accent,var(--accent));
+  cursor:grab;transition:transform .15s var(--ease-spring),box-shadow .15s;
+}
+.slider::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.3);box-shadow:0 0 0 5px var(--accent-glow)}
+.slider-fill{
+  position:absolute;left:0;top:50%;transform:translateY(-50%);
+  height:2px;background:var(--panel-accent,var(--accent));
+  border-radius:2px;pointer-events:none;z-index:0;
+}
+.range-labels{display:flex;justify-content:space-between;margin-top:7px}
+.range-label{font-family:var(--font-mono);font-size:10px;color:var(--text-muted)}
 
-        .header-right { display:flex; align-items:center; gap:14px; }
+/* model select */
+.model-select-group{margin-bottom:1.8rem}
+.model-options{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.model-opt{
+  border:1px solid var(--border-mid);border-radius:var(--r-md);padding:10px 8px;
+  cursor:pointer;text-align:center;transition:border-color .2s,background .2s;
+  position:relative;overflow:hidden;
+}
+.model-opt input{position:absolute;opacity:0;pointer-events:none}
+.model-opt:has(input:checked){border-color:var(--panel-accent,var(--accent));background:var(--accent-dim)}
+.model-opt-name{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:3px}
+.model-opt-sub{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);display:block}
+.model-opt:has(input:checked) .model-opt-name{color:var(--panel-accent,var(--accent))}
 
-        .header-badge {
-            font-family: var(--font-mono);
-            font-size:11px; font-weight:400;
-            color:var(--text-muted);
-            letter-spacing:.08em; text-transform:uppercase;
-            border:1px solid var(--border-subtle);
-            padding:6px 12px; border-radius:100px;
-            transition: color .3s, border-color .3s;
-        }
+/* btn */
+.btn-process{
+  width:100%;height:50px;border:none;border-radius:var(--r-md);
+  font-family:var(--font-display);font-size:13px;font-weight:700;
+  letter-spacing:.04em;text-transform:uppercase;cursor:pointer;
+  position:relative;overflow:hidden;background:var(--panel-accent,var(--accent));color:var(--bg-void);
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:transform .15s var(--ease-spring),box-shadow .2s;
+}
+.btn-process::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.15);opacity:0;transition:opacity .2s}
+.btn-process:hover{transform:translateY(-2px)}
+.btn-process:hover::before{opacity:1}
+.btn-process:active{transform:translateY(0)}
+.btn-process:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-process .spinner{
+  display:none;width:14px;height:14px;
+  border:2px solid rgba(0,0,0,.25);border-top-color:var(--bg-void);
+  border-radius:50%;animation:spin .7s linear infinite;
+}
+.btn-process.processing .spinner{display:block}
+.btn-process.processing .btn-icon{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-        /* ══════════════════════════════════════
-           HERO
-        ══════════════════════════════════════ */
-        .hero {
-            padding-bottom: 5rem;
-            animation: fadeSlideUp 0.9s var(--ease-out) 0.1s both;
-        }
-        .hero-eyebrow {
-            font-family:var(--font-mono); font-size:11px;
-            color:var(--accent); letter-spacing:.14em; text-transform:uppercase;
-            margin-bottom:1.5rem;
-            display:flex; align-items:center; gap:12px;
-        }
-        .hero-eyebrow::before {
-            content:''; display:inline-block;
-            width:32px; height:1px; background:var(--accent);
-        }
-        .hero-title {
-            font-size: clamp(2.8rem, 6vw, 4.8rem);
-            font-weight:800; line-height:.95;
-            letter-spacing:-.04em; margin-bottom:1.75rem;
-        }
-        .hero-title em {
-            font-style:normal; color:transparent;
-            -webkit-text-stroke: 1.5px var(--text-secondary);
-            transition: -webkit-text-stroke-color .4s;
-        }
-        .hero-sub {
-            font-size:15px; color:var(--text-secondary);
-            font-weight:400; max-width:480px; line-height:1.75;
-            transition: color .4s;
-        }
+/* progress / status */
+.progress-wrap{display:none;height:2px;background:var(--border-subtle);border-radius:2px;margin-top:12px;overflow:hidden}
+.progress-wrap.visible{display:block}
+.progress-bar{height:100%;width:60%;background:var(--panel-accent,var(--accent));border-radius:2px;animation:progIndeterminate 1.6s ease-in-out infinite}
+@keyframes progIndeterminate{0%{transform:translateX(-100%)}100%{transform:translateX(270%)}}
+.status-msg{margin-top:10px;padding:11px 13px;border-radius:var(--r-sm);font-family:var(--font-mono);font-size:12px;line-height:1.5;display:none;align-items:flex-start;gap:9px}
+.status-msg.error{background:var(--error-dim);border:1px solid rgba(255,92,92,.2);color:var(--error)}
+.status-msg.success{background:var(--accent-dim);border:1px solid rgba(0,229,160,.2);color:var(--accent)}
 
-        /* ══════════════════════════════════════
-           WAVEFORM BANNER
-        ══════════════════════════════════════ */
-        .waveform-banner {
-            margin:0 0 3.5rem;
-            height:56px;
-            display:flex; align-items:center; gap:2px;
-            overflow:hidden;
-            animation: fadeIn 1.2s ease .4s both;
-        }
-        .wf-bar {
-            flex-shrink:0; width:3px; border-radius:2px;
-            background:var(--border-mid);
-            animation: wfAnimate 2s ease-in-out infinite;
-            transition: background .4s;
-        }
-        .wf-bar.active { background:var(--accent); }
-        @keyframes wfAnimate {
-            0%,100%{ transform:scaleY(var(--scale-a,.3)); }
-            50%    { transform:scaleY(var(--scale-b,1)); }
-        }
+/* ═══════════════════════════════════════
+   STUDIO ENHANCE — single wide panel
+═══════════════════════════════════════ */
+.panel-wide{
+  background:var(--bg-surface);border-radius:var(--r-xl);border:1px solid var(--border-subtle);
+  padding:2.75rem;position:relative;overflow:hidden;transition:background .25s;
+}
+.panel-wide::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent-3),transparent);
+}
+.panel-wide-inner{display:grid;grid-template-columns:1fr 1fr;gap:3rem}
+@media(max-width:800px){.panel-wide-inner{grid-template-columns:1fr;gap:2rem}}
+.panel-wide-info{}
+.info-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1.25rem}
+.info-title{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:.75rem}
+.info-desc{font-size:13px;color:var(--text-secondary);line-height:1.8;margin-bottom:2rem}
+.feature-list{display:flex;flex-direction:column;gap:10px}
+.feature-item{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text-secondary);line-height:1.6}
+.feature-check{
+  width:18px;height:18px;border-radius:50%;background:var(--a3-dim);
+  border:1px solid rgba(176,110,255,.25);display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:1px;
+}
+.feat-divider{width:1px;background:var(--border-subtle);align-self:stretch}
+@media(max-width:800px){.feat-divider{display:none}}
 
-        /* ══════════════════════════════════════
-           PANEL GRID
-        ══════════════════════════════════════ */
-        .card-grid {
-            display:grid; grid-template-columns:1fr 1fr;
-            gap:1.5px;
-            background:var(--border-subtle);
-            border-radius:var(--radius-xl);
-            overflow:hidden;
-            border:1px solid var(--border-subtle);
-            animation: fadeSlideUp 1s var(--ease-out) .2s both;
-            transition: background .4s, border-color .4s;
-        }
-        @media(max-width:640px){ .card-grid{ grid-template-columns:1fr; } }
+/* model cards row */
+.model-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.6rem}
+.model-card{
+  border:1px solid var(--border-mid);border-radius:var(--r-md);padding:14px 12px;
+  cursor:pointer;position:relative;overflow:hidden;transition:border-color .2s,background .2s;
+}
+.model-card input{position:absolute;opacity:0;pointer-events:none}
+.model-card:has(input:checked){border-color:var(--accent-3);background:var(--a3-dim)}
+.model-card-name{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;display:block}
+.model-card-desc{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);display:block;line-height:1.5}
+.model-card:has(input:checked) .model-card-name{color:var(--accent-3)}
+.model-recommended{
+  position:absolute;top:6px;right:6px;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;
+  background:var(--a3-dim);color:var(--accent-3);border:1px solid rgba(176,110,255,.25);
+  padding:2px 6px;border-radius:100px;
+}
 
-        .panel {
-            background:var(--bg-surface);
-            padding:2.5rem;
-            position:relative; overflow:hidden;
-            transition: background .3s ease;
-        }
-        .panel:hover { background:var(--bg-raised); }
-        .panel::before {
-            content:''; position:absolute;
-            top:0; left:0; right:0; height:1px;
-            background:linear-gradient(90deg,transparent,var(--accent),transparent);
-            opacity:0; transition:opacity .4s;
-        }
-        .panel:hover::before { opacity:1; }
+/* ═══════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════ */
+.footer-strip{
+  margin-top:5rem;padding-top:2rem;border-top:1px solid var(--border-subtle);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
+}
+.footer-note{font-family:var(--font-mono);font-size:11px;color:var(--text-muted)}
+.footer-stats{display:flex;gap:2rem}
+.stat-val{font-size:14px;font-weight:700;color:var(--text-secondary);letter-spacing:-.02em}
+.stat-key{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase}
 
-        .panel-type-tag {
-            font-family:var(--font-mono); font-size:10px; font-weight:500;
-            letter-spacing:.12em; text-transform:uppercase;
-            color:var(--text-muted); margin-bottom:2rem;
-            display:flex; align-items:center; gap:8px;
-            transition: color .4s;
-        }
-        .dot {
-            width:6px; height:6px; border-radius:50%;
-            background:var(--accent); box-shadow:0 0 8px var(--accent);
-            animation: pulse 2s ease-in-out infinite;
-        }
-        @keyframes pulse {
-            0%,100%{ opacity:1; transform:scale(1); }
-            50%    { opacity:.5; transform:scale(.7); }
-        }
+.footer-links{display:flex;align-items:center;gap:1.5rem;margin-top:1.5rem}
+.footer-link{
+  font-family:var(--font-mono);font-size:11px;color:var(--text-muted);
+  text-decoration:none;transition:color .2s;
+}
+.footer-link:hover{color:var(--text-primary)}
 
-        .panel-title {
-            font-size:22px; font-weight:700;
-            letter-spacing:-.03em; margin-bottom:.4rem;
-            color:var(--text-primary); transition:color .4s;
-        }
-        .panel-desc {
-            font-size:13px; color:var(--text-muted);
-            font-family:var(--font-mono); font-weight:300;
-            margin-bottom:2.5rem; line-height:1.6;
-            transition:color .4s;
-        }
+/* ═══════════════════════════════════════
+   MODAL
+═══════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(8,10,14,.6);backdrop-filter:blur(8px);z-index:200;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.visible{opacity:1;pointer-events:auto}
+.modal{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.95);
+  width:90%;max-width:680px;max-height:85vh;
+  background:var(--bg-surface);border:1px solid var(--border-mid);border-radius:var(--r-lg);
+  z-index:201;display:flex;flex-direction:column;
+  opacity:0;pointer-events:none;transition:opacity .3s,transform .3s var(--ease-out);
+}
+.modal.visible{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border-subtle);flex-shrink:0}
+.modal-title{font-size:16px;font-weight:700}
+.modal-close{width:32px;height:32px;border-radius:50%;border:none;background:transparent;color:var(--text-secondary);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s}
+.modal-close:hover{background:var(--bg-raised);color:var(--text-primary)}
+.modal-content{padding:1.5rem 1.75rem;overflow-y:auto}
+.modal-content h3{font-size:14px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary);margin:1.5rem 0 .75rem}
+.modal-content h3:first-child{margin-top:0}
+.modal-content p{font-size:14px;color:var(--text-secondary);line-height:1.8}
+.modal-content p+p{margin-top:1rem}
+.modal-content ul{font-size:14px;color:var(--text-secondary);line-height:1.8;padding-left:1.5rem;margin-top:1rem}
+.modal-content li{margin-bottom:.5rem}
+.modal-content strong{font-weight:600;color:var(--text-primary)}
 
-        /* ══════════════════════════════════════
-           DROP ZONE
-        ══════════════════════════════════════ */
-        .drop-zone {
-            border:1.5px dashed var(--border-mid);
-            border-radius:var(--radius-md);
-            padding:2rem 1.5rem;
-            display:flex; flex-direction:column;
-            align-items:center; justify-content:center;
-            gap:10px; cursor:pointer;
-            position:relative; overflow:hidden;
-            transition: border-color .25s, background .25s;
-            margin-bottom:1.75rem;
-            min-height:130px; text-align:center;
-        }
-        .drop-zone:hover,.drop-zone.drag-over {
-            border-color:var(--accent); background:var(--accent-dim);
-        }
-        .drop-zone input[type="file"] {
-            position:absolute; inset:0; opacity:0;
-            cursor:pointer; width:100%; height:100%;
-        }
-        .drop-icon {
-            width:32px; height:32px;
-            color:var(--text-muted); transition:color .25s;
-        }
-        .drop-zone:hover .drop-icon,
-        .drop-zone.drag-over .drop-icon { color:var(--accent); }
-        .drop-primary {
-            font-size:13px; font-weight:600;
-            color:var(--text-secondary); letter-spacing:-.01em;
-            transition:color .4s;
-        }
-        .drop-hint {
-            font-family:var(--font-mono); font-size:11px;
-            color:var(--text-muted); transition:color .4s;
-        }
-        .file-selected {
-            font-family:var(--font-mono); font-size:11px;
-            color:var(--accent); display:none;
-            align-items:center; gap:6px; margin-top:4px;
-        }
-
-        /* ══════════════════════════════════════
-           SLIDER
-        ══════════════════════════════════════ */
-        .control-row { margin-bottom:2rem; }
-        .control-label {
-            display:flex; justify-content:space-between;
-            align-items:baseline; margin-bottom:12px;
-        }
-        .control-name {
-            font-size:11px; font-weight:600;
-            letter-spacing:.1em; text-transform:uppercase;
-            color:var(--text-secondary); transition:color .4s;
-        }
-        .control-val {
-            font-family:var(--font-mono); font-size:13px;
-            color:var(--accent); font-weight:500;
-        }
-        .slider-track-wrap {
-            position:relative; height:20px;
-            display:flex; align-items:center;
-        }
-        .slider-custom {
-            -webkit-appearance:none; appearance:none;
-            width:100%; height:2px;
-            background:var(--border-mid);
-            border-radius:2px; outline:none; cursor:pointer;
-            position:relative; z-index:1;
-            transition:background .4s;
-        }
-        .slider-custom::-webkit-slider-thumb {
-            -webkit-appearance:none;
-            width:18px; height:18px; border-radius:50%;
-            background:var(--bg-surface);
-            border:2px solid var(--accent);
-            cursor:grab;
-            transition: transform .15s var(--ease-spring), box-shadow .15s;
-        }
-        .slider-custom::-webkit-slider-thumb:active {
-            cursor:grabbing; transform:scale(1.3);
-            box-shadow:0 0 0 6px var(--accent-glow);
-        }
-        .slider-fill {
-            position:absolute; left:0; top:50%;
-            transform:translateY(-50%);
-            height:2px; background:var(--accent);
-            border-radius:2px; pointer-events:none;
-            z-index:0; transition:width .05s;
-        }
-        .intensity-labels {
-            display:flex; justify-content:space-between; margin-top:8px;
-        }
-        .intensity-label {
-            font-family:var(--font-mono); font-size:10px;
-            color:var(--text-muted); transition:color .4s;
-        }
-
-        /* ══════════════════════════════════════
-           BUTTON
-        ══════════════════════════════════════ */
-        .btn-process {
-            width:100%; height:52px;
-            background:var(--accent); color:var(--bg-void);
-            border:none; border-radius:var(--radius-md);
-            font-family:var(--font-display);
-            font-size:14px; font-weight:700;
-            letter-spacing:.04em; text-transform:uppercase;
-            cursor:pointer; position:relative; overflow:hidden;
-            transition: transform .15s var(--ease-spring), box-shadow .2s;
-            display:flex; align-items:center; justify-content:center; gap:10px;
-        }
-        .btn-process::before {
-            content:''; position:absolute; inset:0;
-            background:rgba(0,0,0,0.15);
-            opacity:0; transition:opacity .2s;
-        }
-        .btn-process:hover { transform:translateY(-2px); box-shadow:0 8px 32px var(--accent-glow); }
-        .btn-process:hover::before { opacity:1; }
-        .btn-process:active { transform:translateY(0); }
-        .btn-process:disabled { opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
-        .btn-process .btn-text { position:relative; z-index:1; }
-        .btn-process .spinner {
-            display:none; width:16px; height:16px;
-            border:2px solid rgba(0,0,0,.3);
-            border-top-color:var(--bg-void);
-            border-radius:50%;
-            animation:spin .7s linear infinite;
-        }
-        .btn-process.processing .spinner { display:block; }
-        .btn-process.processing .btn-icon { display:none; }
-        @keyframes spin { to{ transform:rotate(360deg); } }
-
-        /* ══════════════════════════════════════
-           STATUS & PROGRESS
-        ══════════════════════════════════════ */
-        .status-msg {
-            margin-top:1rem; padding:12px 14px;
-            border-radius:var(--radius-sm);
-            font-family:var(--font-mono); font-size:12px;
-            line-height:1.5; display:none;
-            align-items:flex-start; gap:10px;
-        }
-        .status-msg.error {
-            background:var(--error-dim);
-            border:1px solid rgba(255,92,92,.2);
-            color:var(--error);
-        }
-        .progress-wrap {
-            display:none; height:2px;
-            background:var(--border-subtle);
-            border-radius:2px; margin-top:14px; overflow:hidden;
-        }
-        .progress-wrap.visible { display:block; }
-        .progress-bar {
-            height:100%; width:60%; background:var(--accent); border-radius:2px;
-            animation:progressIndeterminate 1.6s ease-in-out infinite;
-        }
-        @keyframes progressIndeterminate {
-            0%  { transform:translateX(-100%); }
-            100%{ transform:translateX(260%); }
-        }
-
-        /* ══════════════════════════════════════
-           FOOTER
-        ══════════════════════════════════════ */
-        .footer-strip {
-            margin-top:5rem; padding-top:2rem;
-            border-top:1px solid var(--border-subtle);
-            display:flex; align-items:center;
-            justify-content:space-between; flex-wrap:wrap; gap:1rem;
-            animation: fadeIn 1s ease .5s both;
-            transition: border-color .4s;
-        }
-        .footer-note {
-            font-family:var(--font-mono); font-size:11px;
-            color:var(--text-muted); transition:color .4s;
-        }
-        .footer-stats { display:flex; gap:2rem; }
-        .stat-item { text-align:right; }
-        .stat-val {
-            font-size:14px; font-weight:700;
-            color:var(--text-secondary); letter-spacing:-.02em;
-            transition:color .4s;
-        }
-        .stat-key {
-            font-family:var(--font-mono); font-size:10px;
-            color:var(--text-muted); letter-spacing:.08em; text-transform:uppercase;
-            transition:color .4s;
-        }
-
-        /* ══════════════════════════════════════
-           SCROLL REVEAL
-        ══════════════════════════════════════ */
-        .reveal {
-            opacity:0; transform:translateY(24px);
-            transition: opacity .7s var(--ease-out), transform .7s var(--ease-out);
-        }
-        .reveal.visible { opacity:1; transform:translateY(0); }
-
-        /* ══════════════════════════════════════
-           KEYFRAMES
-        ══════════════════════════════════════ */
-        @keyframes fadeSlideDown {
-            from{ opacity:0; transform:translateY(-12px); }
-            to  { opacity:1; transform:translateY(0); }
-        }
-        @keyframes fadeSlideUp {
-            from{ opacity:0; transform:translateY(18px); }
-            to  { opacity:1; transform:translateY(0); }
-        }
-        @keyframes fadeIn {
-            from{ opacity:0; }
-            to  { opacity:1; }
-        }
-    </style>
+/* ═══════════════════════════════════════
+   KEYFRAMES
+═══════════════════════════════════════ */
+@keyframes fadeSlideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+</style>
 </head>
 <body>
 
-<!-- Parallax Canvas -->
 <canvas id="bg-canvas"></canvas>
 
-<div class="page-wrap">
+<!-- ═══════ NAV ═══════ -->
+<nav class="nav">
+  <a class="nav-logo" onclick="showView('home')">
+    <div class="nav-logo-icon">
+      <div class="nav-logo-waves">
+        <div class="nav-lb"></div><div class="nav-lb"></div><div class="nav-lb"></div>
+        <div class="nav-lb"></div><div class="nav-lb"></div>
+      </div>
+    </div>
+    <span class="nav-logo-text">Noise<span>Zero</span></span>
+  </a>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="showView('home')"   id="nl-home">Overview</button>
+    <button class="nav-link"        onclick="showView('denoise')" id="nl-denoise">Denoising</button>
+    <button class="nav-link"        onclick="showView('enhance')" id="nl-enhance">Studio Voice</button>
+  </div>
+  <div class="nav-right">
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+      <div class="theme-toggle-knob">
+        <svg class="toggle-icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="#080A0E" stroke-width="2.5"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        <svg class="toggle-icon icon-sun"  viewBox="0 0 24 24" fill="none" stroke="#080A0E" stroke-width="2.5">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </div>
+    </button>
+  </div>
+</nav>
 
-    <!-- Header -->
-    <header class="site-header">
-        <div class="header-left">
-            <div class="logo-icon">
-                <div class="logo-waves">
-                    <div class="logo-bar"></div><div class="logo-bar"></div>
-                    <div class="logo-bar"></div><div class="logo-bar"></div>
-                    <div class="logo-bar"></div>
-                </div>
-            </div>
-            <span class="logo-text">Noise<span>Zero</span></span>
-        </div>
-        <div class="header-right">
-            <span class="header-badge">AI Studio v2</span>
-            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-                <div class="theme-toggle-knob">
-                    <!-- Moon -->
-                    <svg class="toggle-icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="#080A0E" stroke-width="2.5">
-                        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-                    </svg>
-                    <!-- Sun -->
-                    <svg class="toggle-icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="#080A0E" stroke-width="2.5">
-                        <circle cx="12" cy="12" r="5"/>
-                        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                    </svg>
-                </div>
-            </button>
-        </div>
-    </header>
+<div class="page-shell">
 
-    <!-- Hero -->
-    <section class="hero">
-        <div class="hero-eyebrow">Neural Denoising Engine</div>
-        <h1 class="hero-title">Remove<br><em>every</em><br>frequency.</h1>
-        <p class="hero-sub">Upload your audio or video and let the AI strip background noise, static, and hiss — down to silence.</p>
-    </section>
+<!-- ═══════════════════════════════════════════════
+     VIEW: HOME
+═══════════════════════════════════════════════ -->
+<div class="view active visible" id="view-home">
+<div class="wrap">
 
-    <!-- Waveform Banner -->
-    <div class="waveform-banner reveal" id="waveform"></div>
+  <section class="hero">
+    <div class="hero-eyebrow">Neural Audio Processing Platform</div>
+    <h1 class="hero-title">
+      The last word<br>in <em>clean</em> audio.
+    </h1>
+    <p class="hero-sub">
+      Three AI-powered services for noise removal, video audio cleanup, and speech enhancement, all running on a single production-grade backend.
+    </p>
+    <div class="hero-cta-row">
+      <button class="btn-primary" onclick="showView('denoise')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Start Denoising
+      </button>
+      <button class="btn-ghost" onclick="showView('enhance')">Explore Studio Voice</button>
+    </div>
+  </section>
 
-    <!-- Panel Grid -->
-    <div class="card-grid reveal" style="transition-delay:.1s">
+  <div class="waveform-banner reveal" id="waveform"></div>
 
-        <!-- Audio Panel -->
-        <div class="panel">
-            <div class="panel-type-tag"><span class="dot"></span> Audio</div>
-            <div class="panel-title">Denoise Audio</div>
-            <p class="panel-desc">WAV · MP3 · FLAC · AAC · OGG</p>
-            <form id="audio-form">
-                <div class="drop-zone" id="audio-drop">
-                    <input type="file" id="audio-file" name="file" accept="audio/*" required>
-                    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M9 18V5l12-2v13M9 18c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-2c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"/>
-                    </svg>
-                    <div class="drop-primary">Drop file or click to browse</div>
-                    <div class="drop-hint">Max 500MB per file</div>
-                    <div class="file-selected" id="audio-filename">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span></span>
-                    </div>
-                </div>
-                <div class="control-row">
-                    <div class="control-label">
-                        <span class="control-name">Intensity</span>
-                        <span class="control-val" id="audio-intensity-val">1.0</span>
-                    </div>
-                    <div class="slider-track-wrap">
-                        <div class="slider-fill" id="audio-slider-fill" style="width:100%"></div>
-                        <input type="range" class="slider-custom" id="audio-intensity" name="intensity_ratio"
-                               min="0.0" max="1.0" step="0.1" value="1.0" oninput="updateSlider('audio')">
-                    </div>
-                    <div class="intensity-labels">
-                        <span class="intensity-label">Subtle</span>
-                        <span class="intensity-label">Maximum</span>
-                    </div>
-                </div>
-                <button type="submit" class="btn-process" id="audio-btn">
-                    <svg class="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    <div class="spinner"></div>
-                    <span class="btn-text">Process Audio</span>
-                </button>
-                <div class="progress-wrap" id="audio-progress"><div class="progress-bar"></div></div>
-                <div class="status-msg error" id="audio-error"></div>
-            </form>
-        </div>
+  <!-- Services -->
+  <div class="section-label reveal">Active Services</div>
+  <div class="services-grid reveal" style="transition-delay:.05s">
 
-        <!-- Video Panel -->
-        <div class="panel">
-            <div class="panel-type-tag">
-                <span class="dot" style="background:var(--accent-2);box-shadow:0 0 8px var(--accent-2)"></span> Video
-            </div>
-            <div class="panel-title">Denoise Video</div>
-            <p class="panel-desc">MP4 · MOV · MKV · AVI · WEBM</p>
-            <form id="video-form">
-                <div class="drop-zone" id="video-drop">
-                    <input type="file" id="video-file" name="file" accept="video/*" required>
-                    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>
-                    </svg>
-                    <div class="drop-primary">Drop file or click to browse</div>
-                    <div class="drop-hint">Max 2GB per file</div>
-                    <div class="file-selected" id="video-filename">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span></span>
-                    </div>
-                </div>
-                <div class="control-row">
-                    <div class="control-label">
-                        <span class="control-name">Intensity</span>
-                        <span class="control-val" id="video-intensity-val">1.0</span>
-                    </div>
-                    <div class="slider-track-wrap">
-                        <div class="slider-fill" id="video-slider-fill" style="width:100%"></div>
-                        <input type="range" class="slider-custom" id="video-intensity" name="intensity_ratio"
-                               min="0.0" max="1.0" step="0.1" value="1.0" oninput="updateSlider('video')">
-                    </div>
-                    <div class="intensity-labels">
-                        <span class="intensity-label">Subtle</span>
-                        <span class="intensity-label">Maximum</span>
-                    </div>
-                </div>
-                <button type="submit" class="btn-process" id="video-btn" style="background:var(--accent-2)">
-                    <svg class="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    <div class="spinner"></div>
-                    <span class="btn-text">Process Video</span>
-                </button>
-                <div class="progress-wrap" id="video-progress"><div class="progress-bar"></div></div>
-                <div class="status-msg error" id="video-error"></div>
-            </form>
-        </div>
-
+    <!-- Card 1 -->
+    <div class="svc-card" style="--card-accent:var(--accent)" onclick="showView('denoise')">
+      <div class="svc-card-icon" style="background:var(--accent-dim);border-color:rgba(0,229,160,.2)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8">
+          <path d="M9 18V5l12-2v13M9 18c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2zm12-2c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2z"/>
+        </svg>
+      </div>
+      <div class="svc-card-tag">Service 01 · /denoise/denoise-audio</div>
+      <div class="svc-card-title">Audio Denoising</div>
+      <div class="svc-card-desc">Removes broadband noise, hiss, hum, and background static from any audio file using deep spectral masking.</div>
+      <div class="svc-card-specs">
+        <div class="spec-row"><span class="spec-key">Input</span><span class="spec-val">WAV · MP3 · FLAC · AAC · OGG</span></div>
+        <div class="spec-row"><span class="spec-key">Output</span><span class="spec-val">Denoised WAV file</span></div>
+        <div class="spec-row"><span class="spec-key">Control</span><span class="spec-val">Intensity ratio 0.0 – 1.0</span></div>
+        <div class="spec-row"><span class="spec-key">Limit</span><span class="spec-val">500 MB per file</span></div>
+      </div>
+      <button class="svc-card-link">Open Tool <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
     </div>
 
-    <!-- Footer -->
-    <div class="footer-strip reveal" style="transition-delay:.2s">
-        <p class="footer-note">Built on RNNoise · DeepFilterNet · FFmpeg pipeline</p>
-        <div class="footer-stats">
-            <div class="stat-item">
-                <div class="stat-val">44.1kHz</div>
-                <div class="stat-key">Max Sample Rate</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-val">4K</div>
-                <div class="stat-key">Video Support</div>
-            </div>
-        </div>
+    <!-- Card 2 -->
+    <div class="svc-card" style="--card-accent:var(--accent-2)" onclick="showView('denoise')">
+      <div class="svc-card-icon" style="background:var(--a2-dim);border-color:rgba(0,153,255,.2)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-2)" stroke-width="1.8">
+          <rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/>
+        </svg>
+      </div>
+      <div class="svc-card-tag">Service 02 · /denoise/denoise-video</div>
+      <div class="svc-card-title">Video Audio Denoising</div>
+      <div class="svc-card-desc">Extracts, denoises, and re-muxes the audio track in any video container — returning a clean video file with intact visuals.</div>
+      <div class="svc-card-specs">
+        <div class="spec-row"><span class="spec-key">Input</span><span class="spec-val">MP4 · MOV · MKV · AVI · WEBM</span></div>
+        <div class="spec-row"><span class="spec-key">Output</span><span class="spec-val">Denoised video file</span></div>
+        <div class="spec-row"><span class="spec-key">Control</span><span class="spec-val">Intensity ratio 0.0 – 1.0</span></div>
+        <div class="spec-row"><span class="spec-key">Limit</span><span class="spec-val">2 GB per file</span></div>
+      </div>
+      <button class="svc-card-link" style="color:var(--accent-2)">Open Tool <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
     </div>
 
+    <!-- Card 3 -->
+    <div class="svc-card" style="--card-accent:var(--accent-3)" onclick="showView('enhance')">
+      <div class="svc-card-icon" style="background:var(--a3-dim);border-color:rgba(176,110,255,.2)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-3)" stroke-width="1.8">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </div>
+      <div class="svc-card-tag">Service 03 · /enhance/enhance-audio</div>
+      <div class="svc-card-title">AI Studio Voice</div>
+      <div class="svc-card-desc">Uplift speech intelligibility and presence using NVIDIA's real-time Studio Voice AI — available in three precision models.</div>
+      <div class="svc-card-specs">
+        <div class="spec-row"><span class="spec-key">Models</span><span class="spec-val">48k-hq · 48k-ll · 16k-hq</span></div>
+        <div class="spec-row"><span class="spec-key">Output</span><span class="spec-val">Enhanced WAV (16k or 48kHz)</span></div>
+        <div class="spec-row"><span class="spec-key">Mode</span><span class="spec-val">Transactional + Streaming</span></div>
+        <div class="spec-row"><span class="spec-key">Backend</span><span class="spec-val">NVIDIA Cloud Functions</span></div>
+      </div>
+      <button class="svc-card-link" style="color:var(--accent-3)">Open Tool <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+    </div>
+
+  </div>
+
+  <!-- Tech numbers -->
+  <div class="tech-strip reveal" style="transition-delay:.1s;margin-top:1px">
+    <div class="tech-cell">
+      <div class="tech-num">3<span> APIs</span></div>
+      <div class="tech-label">Active Services</div>
+    </div>
+    <div class="tech-cell">
+      <div class="tech-num">48<span>kHz</span></div>
+      <div class="tech-label">Max Sample Rate</div>
+    </div>
+    <div class="tech-cell">
+      <div class="tech-num">2<span> GB</span></div>
+      <div class="tech-label">Max Video Size</div>
+    </div>
+    <div class="tech-cell">
+      <div class="tech-num">50<span>/min</span></div>
+      <div class="tech-label">Rate Limit</div>
+    </div>
+  </div>
+
+  <!-- Pipeline -->
+  <div class="pipeline-section reveal" style="transition-delay:.15s">
+    <div class="section-label" style="margin-bottom:1.5rem">How it works</div>
+    <div class="pipeline-steps">
+      <div class="step">
+        <div class="step-num">Step 01</div>
+        <div class="step-title">Upload & Convert</div>
+        <div class="step-desc">Your file is received, validated, and converted to the optimal sample rate for the chosen model.</div>
+        <div class="step-connector"></div>
+      </div>
+      <div class="step">
+        <div class="step-num">Step 02</div>
+        <div class="step-title">AI Processing</div>
+        <div class="step-desc">Deep neural models run inference — spectral masking for denoising, Studio Voice for enhancement.</div>
+        <div class="step-connector"></div>
+      </div>
+      <div class="step">
+        <div class="step-num">Step 03</div>
+        <div class="step-title">Download Output</div>
+        <div class="step-desc">The processed file is streamed back to your browser and temporary files are cleaned up automatically.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-strip reveal" style="transition-delay:.2s">
+    <div>
+      <p class="footer-note">Powered by modern AI audio models.</p>
+      <div class="footer-links">
+        <a href="javascript:void(0)" onclick="openModal('ua-modal')" class="footer-link">User Agreement</a>
+        <a href="javascript:void(0)" onclick="openModal('pp-modal')" class="footer-link">Privacy Policy</a>
+      </div>
+    </div>
+    <div class="footer-stats"><div><div class="stat-val">4K</div><div class="stat-key">Video</div></div></div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     VIEW: DENOISING
+═══════════════════════════════════════════════ -->
+<div class="view" id="view-denoise">
+<div class="wrap">
+
+  <div class="page-hero">
+    <div class="page-eyebrow">
+      <span class="dot" style="background:var(--accent);box-shadow:0 0 8px var(--accent)"></span>
+      <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Noise Removal Engine</span>
+    </div>
+    <h1 class="page-title">Denoising Studio</h1>
+    <p class="page-sub">Strip background noise from audio tracks and full video files. Tune the intensity to keep the natural character of the source.</p>
+  </div>
+
+  <div class="tool-grid reveal" style="--panel-accent:var(--accent)">
+
+    <!-- Audio -->
+    <div class="panel" style="--panel-accent:var(--accent)">
+      <div class="panel-tag"><span class="dot-sm" style="background:var(--accent);box-shadow:0 0 6px var(--accent)"></span> Audio</div>
+      <div class="panel-title">Denoise Audio</div>
+      <div class="panel-formats">WAV · MP3 · FLAC · AAC · OGG — max 500MB</div>
+      <form id="audio-form">
+        <div class="drop-zone" id="audio-drop">
+          <input type="file" id="audio-file" name="file" accept="audio/*" required>
+          <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13M9 18c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2zm12-2c0 1.1-1.34 2-3 2s-3-.9-3-2 1.34-2 3-2 3 .9 3 2z"/></svg>
+          <div class="drop-primary">Drop file or click to browse</div>
+          <div class="drop-hint">Audio files only</div>
+          <div class="file-selected" id="audio-fname"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span></span></div>
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span class="control-name">Denoising Intensity</span><span class="control-val" id="av">1.0</span></div>
+          <div class="slider-wrap">
+            <div class="slider-fill" id="af" style="width:100%"></div>
+            <input type="range" class="slider" id="ai" name="intensity_ratio" min="0" max="1" step="0.1" value="1" oninput="updSlider('a')">
+          </div>
+          <div class="range-labels"><span class="range-label">Subtle</span><span class="range-label">Maximum</span></div>
+        </div>
+        <button type="submit" class="btn-process" id="audio-btn">
+          <svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <div class="spinner"></div>
+          <span>Process Audio</span>
+        </button>
+        <div class="progress-wrap" id="ap"><div class="progress-bar" style="background:var(--accent)"></div></div>
+        <div class="status-msg error" id="ae"></div>
+      </form>
+    </div>
+
+    <!-- Video -->
+    <div class="panel" style="--panel-accent:var(--accent-2)">
+      <div class="panel-tag"><span class="dot-sm" style="background:var(--accent-2);box-shadow:0 0 6px var(--accent-2)"></span> Video</div>
+      <div class="panel-title">Denoise Video</div>
+      <div class="panel-formats">MP4 · MOV · MKV · AVI · WEBM — max 2GB</div>
+      <form id="video-form">
+        <div class="drop-zone" id="video-drop">
+          <input type="file" id="video-file" name="file" accept="video/*" required>
+          <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+          <div class="drop-primary">Drop file or click to browse</div>
+          <div class="drop-hint">Video files only</div>
+          <div class="file-selected" id="video-fname"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span></span></div>
+        </div>
+        <div class="control-row">
+          <div class="control-label"><span class="control-name">Denoising Intensity</span><span class="control-val" id="vv" style="color:var(--accent-2)">1.0</span></div>
+          <div class="slider-wrap">
+            <div class="slider-fill" id="vf" style="width:100%;background:var(--accent-2)"></div>
+            <input type="range" class="slider" id="vi" name="intensity_ratio" min="0" max="1" step="0.1" value="1" oninput="updSlider('v')" style="--panel-accent:var(--accent-2)">
+          </div>
+          <div class="range-labels"><span class="range-label">Subtle</span><span class="range-label">Maximum</span></div>
+        </div>
+        <button type="submit" class="btn-process" id="video-btn" style="background:var(--accent-2)">
+          <svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <div class="spinner"></div>
+          <span>Process Video</span>
+        </button>
+        <div class="progress-wrap" id="vp"><div class="progress-bar" style="background:var(--accent-2)"></div></div>
+        <div class="status-msg error" id="ve"></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="footer-strip reveal" style="transition-delay:.1s;margin-top:4rem">
+    <div>
+      <p class="footer-note">Powered by state-of-the-art denoising models.</p>
+      <div class="footer-links">
+        <a href="javascript:void(0)" onclick="openModal('ua-modal')" class="footer-link">User Agreement</a>
+        <a href="javascript:void(0)" onclick="openModal('pp-modal')" class="footer-link">Privacy Policy</a>
+      </div>
+    </div>
+    <div class="footer-stats"><div><div class="stat-val">44.1kHz</div><div class="stat-key">Max SR</div></div><div><div class="stat-val">4K</div><div class="stat-key">Video</div></div></div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     VIEW: STUDIO ENHANCE
+═══════════════════════════════════════════════ -->
+<div class="view" id="view-enhance">
+<div class="wrap">
+
+  <div class="page-hero">
+    <div class="page-eyebrow">
+      <span class="dot" style="background:var(--accent-3);box-shadow:0 0 8px var(--accent-3)"></span>
+      <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-3)">Cloud Powered · Service 03</span>
+    </div>
+    <h1 class="page-title">Studio<br>Voice</h1>
+    <p class="page-sub">Professional-grade AI speech enhancement powered by NVIDIA's cloud inference. Choose a model tuned for quality or low latency.</p>
+  </div>
+
+  <!-- Wide info + form panel -->
+  <div class="panel-wide reveal">
+    <div class="panel-wide-inner" style="grid-template-columns:1fr;">
+
+      <!-- Left: info -->
+      <div class="panel-wide-info">
+        <div class="info-label">What this service does</div>
+        <div class="info-title">AI Speech Enhancement</div>
+        <div class="info-desc">
+          Studio Voice is a neural speech processing model that goes beyond simple noise removal. It uplifts speech presence, removes room reverb, and produces broadcast-quality vocal clarity.
+        </div>
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--accent-3)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            Removes background noise and room echo simultaneously
+          </div>
+          <div class="feature-item">
+            <div class="feature-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--accent-3)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            Three models: High Quality 48kHz, Low Latency 48kHz, High Quality 16kHz
+          </div>
+          <div class="feature-item">
+            <div class="feature-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--accent-3)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            Automatic retry logic handles transient cloud service errors
+          </div>
+          <div class="feature-item">
+            <div class="feature-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--accent-3)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            Non-WAV inputs auto-converted and resampled before processing
+          </div>
+          <div class="feature-item">
+            <div class="feature-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--accent-3)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            TLS-encrypted transport to NVIDIA cloud endpoints
+          </div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="feat-divider" style="display:none;"></div>
+
+      <!-- Right: form -->
+      <div>
+        <div class="panel-tag" style="--panel-accent:var(--accent-3)">
+          <span class="dot-sm" style="background:var(--accent-3);box-shadow:0 0 6px var(--accent-3)"></span>
+          /enhance/enhance-audio
+        </div>
+
+        <form id="enhance-form">
+          <div class="drop-zone" id="enhance-drop" style="--panel-accent:var(--accent-3)">
+            <input type="file" id="enhance-file" name="file" accept="audio/*" required>
+            <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            <div class="drop-primary">Drop audio file or click to browse</div>
+            <div class="drop-hint">WAV · MP3 · FLAC — auto-converted</div>
+            <div class="file-selected" id="enhance-fname" style="color:var(--accent-3)">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span></span>
+            </div>
+          </div>
+
+          <!-- Model selector -->
+          <div class="model-select-group">
+            <div class="control-label">
+              <span class="control-name">Model</span>
+              <span class="control-val" id="model-display" style="color:var(--accent-3)">48k-hq</span>
+            </div>
+            <div class="model-cards">
+              <label class="model-card">
+                <input type="radio" name="model_type" value="48k-hq" checked onchange="document.getElementById('model-display').textContent=this.value">
+                <span class="model-card-name">48k-hq</span>
+                <span class="model-card-desc">48kHz · High quality · Transactional</span>
+                <span class="model-recommended">Default</span>
+              </label>
+              <label class="model-card">
+                <input type="radio" name="model_type" value="48k-ll" onchange="document.getElementById('model-display').textContent=this.value">
+                <span class="model-card-name">48k-ll</span>
+                <span class="model-card-desc">48kHz · Low latency · Streaming</span>
+              </label>
+              <label class="model-card">
+                <input type="radio" name="model_type" value="16k-hq" onchange="document.getElementById('model-display').textContent=this.value">
+                <span class="model-card-name">16k-hq</span>
+                <span class="model-card-desc">16kHz · High quality · Transactional</span>
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-process" id="enhance-btn" style="background:var(--accent-3)">
+            <svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            <div class="spinner"></div>
+            <span>Enhance with Studio Voice</span>
+          </button>
+          <div class="progress-wrap" id="ep"><div class="progress-bar" style="background:var(--accent-3)"></div></div>
+          <div class="status-msg error" id="ee"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-strip reveal" style="transition-delay:.15s;margin-top:4rem">
+    <div>
+      <p class="footer-note">Powered by cloud-based AI speech models.</p>
+      <div class="footer-links">
+        <a href="javascript:void(0)" onclick="openModal('ua-modal')" class="footer-link">User Agreement</a>
+        <a href="javascript:void(0)" onclick="openModal('pp-modal')" class="footer-link">Privacy Policy</a>
+      </div>
+    </div>
+    <div class="footer-stats"><div><div class="stat-val">48kHz</div><div class="stat-key">Max SR</div></div><div><div class="stat-val">TLS</div><div class="stat-key">Transport</div></div></div>
+  </div>
+
+</div>
+</div>
+
+</div><!-- /page-shell -->
+
+<!-- ═══════════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay"></div>
+
+<div class="modal" id="ua-modal">
+  <div class="modal-header">
+    <div class="modal-title">User Agreement</div>
+    <button class="modal-close" onclick="closeModal('ua-modal')">&times;</button>
+  </div>
+  <div class="modal-content">
+    <h3>1. Acceptance of Terms</h3>
+    <p>By accessing or using NoiseZero ("the Service"), you agree to be bound by this User Agreement ("Agreement"). If you disagree with any part of the terms, you may not access the Service. This Agreement was last updated on October 26, 2023.</p>
+    <h3>2. Description of Service</h3>
+    <p>The Service provides AI-powered audio processing, including noise removal and speech enhancement. You may upload audio or video files for processing. The Service is provided "AS IS" and "AS AVAILABLE" without warranties of any kind, either express or implied.</p>
+    <h3>3. User Conduct</h3>
+    <p>You are solely responsible for the content you upload and for your compliance with all applicable laws. You agree not to use the Service to process any content that is illegal, infringing on intellectual property rights, or otherwise malicious. We reserve the right to refuse service to anyone for any reason at any time.</p>
+    <h3>4. Intellectual Property</h3>
+    <p>You retain full ownership of the original content you upload. By using the Service, you grant us a temporary, non-exclusive, worldwide, royalty-free license to use, reproduce, and modify your content solely for the purpose of providing the audio processing service to you. This license terminates immediately upon the completion of the processing and delivery of your file.</p>
+    <h3>5. Limitation of Liability</h3>
+    <p>In no event shall NoiseZero, nor its directors, employees, partners, or agents, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, or other intangibles, resulting from your access to or use of or inability to access or use the Service.</p>
+    <h3>6. Changes to Agreement</h3>
+    <p>We reserve the right, at our sole discretion, to modify or replace this Agreement at any time. We will provide notice of any changes by posting the new User Agreement on this site.</p>
+  </div>
+</div>
+
+<div class="modal" id="pp-modal">
+  <div class="modal-header">
+    <div class="modal-title">Privacy Policy</div>
+    <button class="modal-close" onclick="closeModal('pp-modal')">&times;</button>
+  </div>
+  <div class="modal-content">
+    <h3>Our Commitment to Privacy</h3>
+    <p>Your privacy is critically important to us. At NoiseZero, we have a few fundamental principles:</p>
+    <ul>
+      <li>We do not ask you for personal information unless we truly need it.</li>
+      <li>We do not store your personal information or your uploaded files on our servers.</li>
+      <li>We do not share your information with anyone except to comply with the law or protect our rights.</li>
+    </ul>
+    <h3>Data Handling</h3>
+    <p><strong>No Data Storage:</strong> When you upload a file to our Service, it is held in temporary memory on our server only for the duration of the AI processing. Once the processing is complete and the resulting file is sent back to you, your original file and the processed version are <strong>permanently and irretrievably deleted</strong> from our system. We do not keep any copies.</p>
+    <p><strong>Log Data:</strong> Like most website operators, we may collect non-personally-identifying information of the sort that web browsers and servers typically make available, such as the browser type, language preference, referring site, and the date and time of each visitor request. Our purpose in collecting this information is to better understand how our visitors use the website. This data is anonymous and is not linked to any personal information.</p>
+    <h3>Third-Party Services</h3>
+    <p>The "Studio Voice" feature utilizes NVIDIA's cloud inference APIs. Your audio data is sent securely via TLS encryption to NVIDIA's servers for processing. According to NVIDIA's policies, they do not store your data after processing. We are not responsible for the privacy practices of NVIDIA. We encourage you to review their privacy policy.</p>
+    <h3>Policy Changes</h3>
+    <p>Although most changes are likely to be minor, we may change our Privacy Policy from time to time, and at our sole discretion. We encourage visitors to frequently check this page for any changes to its Privacy Policy.</p>
+  </div>
 </div>
 
 <script>
-/* ══════════════════════════════════════════
-   PARALLAX CANVAS BACKGROUND
-   - Floating orbs (slow drift, parallax on scroll)
-   - Expanding frequency rings
-   - Fine particle field
-══════════════════════════════════════════ */
-(function initCanvas() {
-    const canvas = document.getElementById('bg-canvas');
-    const ctx = canvas.getContext('2d');
-    let W, H, scrollY = 0, isDark = true;
-    let animFrame;
-
-    function resize() {
-        W = canvas.width  = window.innerWidth;
-        H = canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener('resize', resize);
-    window.addEventListener('scroll', () => { scrollY = window.scrollY; }, { passive: true });
-
-    /* ── Orbs ── */
-    const ORBS = Array.from({ length: 6 }, (_, i) => ({
-        x: Math.random() * 0.9 + 0.05,   // fractional screen pos
-        y: Math.random() * 0.9 + 0.05,
-        r: 180 + Math.random() * 260,
-        speed: 0.00015 + Math.random() * 0.0002,
-        angle: Math.random() * Math.PI * 2,
-        drift: (Math.random() - 0.5) * 0.0003,
-        parallax: 0.06 + Math.random() * 0.18,  // scroll parallax factor
-        hue: i % 2 === 0 ? 'accent' : 'accent2'
-    }));
-
-    /* ── Rings ── */
-    const RINGS = [];
-    function spawnRing() {
-        RINGS.push({
-            x: Math.random() * W,
-            y: Math.random() * H,
-            r: 0,
-            maxR: 120 + Math.random() * 200,
-            speed: 0.4 + Math.random() * 0.5,
-            alpha: 0.35,
-        });
-    }
-    setInterval(spawnRing, 2200);
-    spawnRing(); spawnRing();
-
-    /* ── Particles ── */
-    const PARTICLES = Array.from({ length: 55 }, () => ({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        vx: (Math.random() - 0.5) * 0.22,
-        vy: (Math.random() - 0.5) * 0.22,
-        r: 0.8 + Math.random() * 1.4,
-        alpha: 0.15 + Math.random() * 0.35,
-    }));
-
-    function getColors() {
-        const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-        return {
-            orb1: dark ? 'rgba(0,229,160,'   : 'rgba(0,180,120,',
-            orb2: dark ? 'rgba(0,153,255,'   : 'rgba(0,100,220,',
-            ring: dark ? 'rgba(0,229,160,'   : 'rgba(0,180,120,',
-            particle: dark ? 'rgba(255,255,255,' : 'rgba(0,0,0,',
-        };
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, W, H);
-        const C = getColors();
-        const opacity = parseFloat(
-            getComputedStyle(document.documentElement).getPropertyValue('--orb-opacity').trim()
-        ) || 0.18;
-
-        /* Orbs */
-        ORBS.forEach(o => {
-            o.angle += o.speed;
-            o.drift && (o.angle += o.drift * 0.1);
-            const px = (o.x * W) + Math.cos(o.angle) * 60;
-            const py = (o.y * H) + Math.sin(o.angle * 0.7) * 40 - scrollY * o.parallax;
-            const col = o.hue === 'accent' ? C.orb1 : C.orb2;
-            const g = ctx.createRadialGradient(px, py, 0, px, py, o.r);
-            g.addColorStop(0,   col + (opacity * 0.9) + ')');
-            g.addColorStop(0.5, col + (opacity * 0.4) + ')');
-            g.addColorStop(1,   col + '0)');
-            ctx.beginPath();
-            ctx.arc(px, py, o.r, 0, Math.PI * 2);
-            ctx.fillStyle = g;
-            ctx.fill();
-        });
-
-        /* Rings */
-        for (let i = RINGS.length - 1; i >= 0; i--) {
-            const rg = RINGS[i];
-            rg.r   += rg.speed;
-            rg.alpha = 0.35 * (1 - rg.r / rg.maxR);
-            if (rg.r >= rg.maxR) { RINGS.splice(i, 1); continue; }
-            ctx.beginPath();
-            ctx.arc(rg.x, rg.y, rg.r, 0, Math.PI * 2);
-            ctx.strokeStyle = C.ring + rg.alpha + ')';
-            ctx.lineWidth   = 1;
-            ctx.stroke();
-        }
-
-        /* Particles */
-        PARTICLES.forEach(p => {
-            p.x += p.vx; p.y += p.vy;
-            if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
-            if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-            ctx.fillStyle = C.particle + p.alpha + ')';
-            ctx.fill();
-        });
-
-        animFrame = requestAnimationFrame(draw);
-    }
-    draw();
-})();
-
-
-/* ══════════════════════════════════════════
-   THEME TOGGLE
-══════════════════════════════════════════ */
-(function initTheme() {
-    const html   = document.documentElement;
-    const btn    = document.getElementById('theme-toggle');
-    const stored = localStorage.getItem('nz-theme') || 'dark';
-    html.setAttribute('data-theme', stored);
-
-    btn.addEventListener('click', () => {
-        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        html.setAttribute('data-theme', next);
-        localStorage.setItem('nz-theme', next);
+/* ═══════════════════════════════════════════════════
+   PARALLAX CANVAS
+═══════════════════════════════════════════════════ */
+(function(){
+  const cv=document.getElementById('bg-canvas'),ctx=cv.getContext('2d');
+  let W,H,scrollY=0;
+  function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight}
+  resize();window.addEventListener('resize',resize);
+  window.addEventListener('scroll',()=>{scrollY=window.scrollY},{passive:true});
+  const ORBS=Array.from({length:6},(_,i)=>({
+    x:.1+Math.random()*.8,y:.1+Math.random()*.8,
+    r:160+Math.random()*260,speed:.00012+Math.random()*.0002,
+    angle:Math.random()*Math.PI*2,parallax:.05+Math.random()*.2,
+    hue:i%3
+  }));
+  const RINGS=[];
+  function spawnRing(){RINGS.push({x:Math.random()*W,y:Math.random()*H,r:0,maxR:110+Math.random()*180,speed:.35+Math.random()*.45,alpha:.35})}
+  setInterval(spawnRing,2400);spawnRing();spawnRing();
+  const PARTS=Array.from({length:50},()=>({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,r:.8+Math.random()*1.3,a:.12+Math.random()*.3}));
+  function getC(){
+    const dk=document.documentElement.getAttribute('data-theme')==='dark';
+    return{o0:dk?'rgba(0,229,160,':'rgba(0,180,120,',o1:dk?'rgba(0,153,255,':'rgba(0,100,220,',o2:dk?'rgba(176,110,255,':'rgba(130,70,220,',ring:dk?'rgba(0,229,160,':'rgba(0,180,120,',pt:dk?'rgba(255,255,255,':'rgba(0,0,0,'};
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const C=getC();
+    const op=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--orb-opacity').trim())||.18;
+    ORBS.forEach(o=>{
+      o.angle+=o.speed;
+      const px=(o.x*W)+Math.cos(o.angle)*55,py=(o.y*H)+Math.sin(o.angle*.7)*38-scrollY*o.parallax;
+      const col=[C.o0,C.o1,C.o2][o.hue];
+      const g=ctx.createRadialGradient(px,py,0,px,py,o.r);
+      g.addColorStop(0,col+(op*.9)+')');g.addColorStop(.5,col+(op*.4)+')');g.addColorStop(1,col+'0)');
+      ctx.beginPath();ctx.arc(px,py,o.r,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
     });
-})();
-
-
-/* ══════════════════════════════════════════
-   SCROLL REVEAL
-══════════════════════════════════════════ */
-(function initReveal() {
-    const els = document.querySelectorAll('.reveal');
-    const io = new IntersectionObserver((entries) => {
-        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
-    }, { threshold: 0.15 });
-    els.forEach(el => io.observe(el));
-})();
-
-
-/* ══════════════════════════════════════════
-   WAVEFORM
-══════════════════════════════════════════ */
-(function buildWave() {
-    const container = document.getElementById('waveform');
-    const total = Math.floor((container.parentElement.offsetWidth || 800) / 5);
-    for (let i = 0; i < total; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'wf-bar' + (Math.random() > 0.65 ? ' active' : '');
-        bar.style.height  = (8 + Math.random() * 48) + 'px';
-        bar.style.setProperty('--scale-a', 0.2 + Math.random() * 0.4);
-        bar.style.setProperty('--scale-b', 0.6 + Math.random() * 0.4);
-        bar.style.animationDuration = (1.5 + Math.random() * 2) + 's';
-        bar.style.animationDelay   = -(Math.random() * 3) + 's';
-        container.appendChild(bar);
+    for(let i=RINGS.length-1;i>=0;i--){
+      const r=RINGS[i];r.r+=r.speed;r.alpha=.35*(1-r.r/r.maxR);
+      if(r.r>=r.maxR){RINGS.splice(i,1);continue}
+      ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,Math.PI*2);
+      ctx.strokeStyle=C.ring+r.alpha+')';ctx.lineWidth=1;ctx.stroke();
     }
+    PARTS.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=C.pt+p.a+')';ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
 })();
 
+/* ═══════════════════════════════════════════════════
+   THEME
+═══════════════════════════════════════════════════ */
+(function(){
+  const html=document.documentElement,btn=document.getElementById('theme-toggle');
+  html.setAttribute('data-theme',localStorage.getItem('nz-theme')||'dark');
+  btn.addEventListener('click',()=>{
+    const n=html.getAttribute('data-theme')==='dark'?'light':'dark';
+    html.setAttribute('data-theme',n);localStorage.setItem('nz-theme',n);
+  });
+})();
 
-/* ══════════════════════════════════════════
-   SLIDER
-══════════════════════════════════════════ */
-function updateSlider(type) {
-    const s   = document.getElementById(type + '-intensity');
-    const val = parseFloat(s.value);
-    document.getElementById(type + '-intensity-val').textContent = val.toFixed(1);
-    const pct = ((val - parseFloat(s.min)) / (parseFloat(s.max) - parseFloat(s.min))) * 100;
-    document.getElementById(type + '-slider-fill').style.width = pct + '%';
+/* ═══════════════════════════════════════════════════
+   VIEW ROUTER
+═══════════════════════════════════════════════════ */
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>{
+    v.classList.remove('active','visible');
+  });
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  const v=document.getElementById('view-'+name);
+  document.getElementById('nl-'+name).classList.add('active');
+  v.classList.add('active');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    v.classList.add('visible');
+    window.scrollTo({top:0,behavior:'smooth'});
+    initReveal();
+  }));
 }
 
+/* ═══════════════════════════════════════════════════
+   SCROLL REVEAL
+═══════════════════════════════════════════════════ */
+function initReveal(){
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target)}});
+  },{threshold:.12});
+  document.querySelectorAll('#view-'+currentView()+' .reveal').forEach(el=>{
+    if(!el.classList.contains('visible')) io.observe(el);
+  });
+}
+function currentView(){
+  const v=document.querySelector('.view.active');return v?v.id.replace('view-',''):'home';
+}
+initReveal();
 
-/* ══════════════════════════════════════════
+/* ═══════════════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════════════ */
+const overlay = document.getElementById('modal-overlay');
+function openModal(id) {
+  const modal = document.getElementById(id);
+  overlay.classList.add('visible');
+  modal.classList.add('visible');
+}
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  overlay.classList.remove('visible');
+  modal.classList.remove('visible');
+}
+/* ═══════════════════════════════════════════════════
+   WAVEFORM
+═══════════════════════════════════════════════════ */
+(function(){
+  const c=document.getElementById('waveform');
+  const tot=Math.floor((c.parentElement.offsetWidth||820)/5);
+  for(let i=0;i<tot;i++){
+    const b=document.createElement('div');
+    b.className='wf-bar'+(Math.random()>.65?' active':'');
+    b.style.height=(8+Math.random()*52)+'px';
+    b.style.setProperty('--sa',.2+Math.random()*.4);
+    b.style.setProperty('--sb',.6+Math.random()*.4);
+    b.style.animationDuration=(1.5+Math.random()*2)+'s';
+    b.style.animationDelay=-(Math.random()*3)+'s';
+    c.appendChild(b);
+  }
+})();
+
+/* ═══════════════════════════════════════════════════
+   SLIDERS
+═══════════════════════════════════════════════════ */
+function updSlider(t){
+  const s=document.getElementById(t==='a'?'ai':'vi');
+  const val=parseFloat(s.value);
+  document.getElementById(t+'v').textContent=val.toFixed(1);
+  const pct=val*100;
+  document.getElementById(t+'f').style.width=pct+'%';
+}
+
+/* ═══════════════════════════════════════════════════
    DRAG & DROP
-══════════════════════════════════════════ */
-['audio-drop', 'video-drop'].forEach(id => {
-    const z = document.getElementById(id);
-    z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag-over'); });
-    z.addEventListener('dragleave', ()  => z.classList.remove('drag-over'));
-    z.addEventListener('drop',      ()  => z.classList.remove('drag-over'));
+═══════════════════════════════════════════════════ */
+['audio-drop','video-drop','enhance-drop'].forEach(id=>{
+  const z=document.getElementById(id);
+  if(!z)return;
+  z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drag-over')});
+  z.addEventListener('dragleave',()=>z.classList.remove('drag-over'));
+  z.addEventListener('drop',()=>z.classList.remove('drag-over'));
 });
 
-
-/* ══════════════════════════════════════════
-   FILE LABEL
-══════════════════════════════════════════ */
-function bindFile(inputId, nameId) {
-    const inp = document.getElementById(inputId);
-    const lbl = document.getElementById(nameId);
-    inp.addEventListener('change', () => {
-        if (inp.files[0]) {
-            lbl.querySelector('span').textContent = inp.files[0].name;
-            lbl.style.display = 'flex';
-        }
-    });
+/* ═══════════════════════════════════════════════════
+   FILE LABELS
+═══════════════════════════════════════════════════ */
+function bindFile(inp,lbl){
+  const i=document.getElementById(inp),l=document.getElementById(lbl);
+  if(!i||!l)return;
+  i.addEventListener('change',()=>{
+    if(i.files[0]){l.querySelector('span').textContent=i.files[0].name;l.style.display='flex'}
+  });
 }
-bindFile('audio-file', 'audio-filename');
-bindFile('video-file', 'video-filename');
+bindFile('audio-file','audio-fname');
+bindFile('video-file','video-fname');
+bindFile('enhance-file','enhance-fname');
 
-
-/* ══════════════════════════════════════════
-   FORM SUBMIT
-══════════════════════════════════════════ */
-function setupForm(formId, endpoint, btnId, progressId, errorId) {
-    const form     = document.getElementById(formId);
-    const btn      = document.getElementById(btnId);
-    const progWrap = document.getElementById(progressId);
-    const errDiv   = document.getElementById(errorId);
-
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        errDiv.style.display = 'none';
-        btn.disabled = true;
-        btn.classList.add('processing');
-        progWrap.classList.add('visible');
-
-        try {
-            const res = await fetch(endpoint, { method:'POST', body: new FormData(form) });
-            if (!res.ok) {
-                const d = await res.json().catch(() => ({}));
-                throw new Error(d.detail || 'Server error ' + res.status);
-            }
-            const blob = await res.blob();
-            const url  = URL.createObjectURL(blob);
-            const a    = Object.assign(document.createElement('a'), { href:url, style:'display:none' });
-            const cd   = res.headers.get('content-disposition');
-            const m    = cd && cd.match(/filename="(.+)"/);
-            a.download = m ? m[1] : 'denoised_output';
-            document.body.appendChild(a); a.click();
-            URL.revokeObjectURL(url); a.remove();
-        } catch(err) {
-            errDiv.textContent = err.message;
-            errDiv.style.display = 'flex';
-        } finally {
-            btn.disabled = false;
-            btn.classList.remove('processing');
-            progWrap.classList.remove('visible');
-        }
-    });
+/* ═══════════════════════════════════════════════════
+   FORM SUBMIT — generic
+═══════════════════════════════════════════════════ */
+function buildEndpoint(base,form){
+  // For enhance, append model_type as query param
+  if(base.includes('enhance')){
+    const mt=form.querySelector('input[name="model_type"]:checked');
+    return base+'?model_type='+(mt?mt.value:'48k-hq');
+  }
+  return base;
 }
-
-setupForm('audio-form', '/denoise/denoise-audio', 'audio-btn', 'audio-progress', 'audio-error');
-setupForm('video-form', '/denoise/denoise-video', 'video-btn', 'video-progress', 'video-error');
+function setupForm(formId,endpoint,btnId,progId,errId){
+  const form=document.getElementById(formId),btn=document.getElementById(btnId);
+  const prog=document.getElementById(progId),err=document.getElementById(errId);
+  if(!form)return;
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();err.style.display='none';
+    btn.disabled=true;btn.classList.add('processing');prog.classList.add('visible');
+    try{
+      const url=buildEndpoint(endpoint,form);
+      const res=await fetch(url,{method:'POST',body:new FormData(form)});
+      if(!res.ok){const d=await res.json().catch(()=>({}));throw new Error(d.detail||'Server error '+res.status)}
+      const blob=await res.blob();
+      const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),style:'display:none'});
+      const cd=res.headers.get('content-disposition'),m=cd&&cd.match(/filename="(.+)"/);
+      a.download=m?m[1]:'output.wav';
+      document.body.appendChild(a);a.click();URL.revokeObjectURL(a.href);a.remove();
+    }catch(er){err.textContent=er.message;err.style.display='flex'}
+    finally{btn.disabled=false;btn.classList.remove('processing');prog.classList.remove('visible')}
+  });
+}
+setupForm('audio-form',  '/denoise/denoise-audio',  'audio-btn',   'ap','ae');
+setupForm('video-form',  '/denoise/denoise-video',  'video-btn',   'vp','ve');
+setupForm('enhance-form','/enhance/enhance-audio',  'enhance-btn', 'ep','ee');
 </script>
-
 </body>
 </html>
