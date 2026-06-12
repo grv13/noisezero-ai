@@ -10,14 +10,8 @@ from starlette.background import BackgroundTask
 
 from ai_clients.bnr.scripts.bnr import run_client as run_bnr_processing
 from limiter import limiter
-from config import (
-    TEMP_DIR,
-    NVIDIA_API_KEY,
-    NVIDIA_FUNCTION_ID,
-    NVIDIA_TARGET_URL,
-    FFMPEG_PATH,
-    _cleanup_file,
-)
+from config import FFMPEG_PATH, TEMP_DIR, _cleanup_file
+from settings import settings
 
 router = APIRouter()
 
@@ -73,9 +67,13 @@ async def denoise_video(
 
         try:
             run_bnr_processing(
-                preview_mode=True, ssl_mode="TLS", target=NVIDIA_TARGET_URL,
-                function_id=NVIDIA_FUNCTION_ID, api_key=NVIDIA_API_KEY,
-                input=str(audio_extracted_path), output=str(audio_denoised_path),
+                preview_mode=True,
+                ssl_mode="TLS",
+                target=settings.NVIDIA_TARGET_URL,
+                function_id=settings.NVIDIA_FUNCTION_ID,
+                api_key=settings.NVIDIA_API_KEY,
+                input=str(audio_extracted_path),
+                output=str(audio_denoised_path),
                 sample_rate=target_sample_rate, streaming=False, intensity_ratio=intensity_ratio,
             )
         except Exception as e:
