@@ -409,6 +409,26 @@ body::after{
 .status-msg.error{background:var(--error-dim);border:1px solid rgba(255,92,92,.2);color:var(--error)}
 .status-msg.success{background:var(--accent-dim);border:1px solid rgba(0,229,160,.2);color:var(--accent)}
 
+/* preview */
+.preview-wrap{margin-top:1.5rem;border:1px solid var(--border-mid);border-radius:var(--r-md);background:var(--bg-raised);padding:1rem 1.25rem;display:none}
+.preview-wrap.visible{display:block;animation:fadeSlideUp .5s var(--ease-out)}
+.preview-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.preview-title{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary)}
+.btn-download{
+  height:32px;padding:0 16px;background:var(--panel-accent,var(--accent));color:var(--bg-void);
+  border:none;border-radius:var(--r-sm);font-family:var(--font-display);
+  font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  cursor:pointer;transition:transform .15s var(--ease-spring),opacity .2s;
+}
+.btn-download:hover{transform:translateY(-1px)}
+.btn-download:active{transform:translateY(0)}
+.preview-player{width:100%;border-radius:var(--r-sm);overflow:hidden}
+[data-theme="dark"] .preview-player{color-scheme:dark}
+[data-theme="light"] .preview-player{color-scheme:light}
+/* Fallback for older browsers, though color-scheme is widely supported */
+.preview-player::-webkit-media-controls-panel{background-color:var(--bg-raised)}
+
+
 /* ═══════════════════════════════════════
    STUDIO ENHANCE — single wide panel
 ═══════════════════════════════════════ */
@@ -736,6 +756,13 @@ body::after{
         </button>
         <div class="progress-wrap" id="ap"><div class="progress-bar" style="background:var(--accent)"></div></div>
         <div class="status-msg error" id="ae"></div>
+        <div class="preview-wrap" id="audio-preview-wrap">
+          <div class="preview-header">
+            <div class="preview-title">Preview</div>
+            <button type="button" class="btn-download" id="audio-download-btn">Download</button>
+          </div>
+          <audio id="audio-preview-player" class="preview-player" controls></audio>
+        </div>
       </form>
     </div>
 
@@ -767,6 +794,13 @@ body::after{
         </button>
         <div class="progress-wrap" id="vp"><div class="progress-bar" style="background:var(--accent-2)"></div></div>
         <div class="status-msg error" id="ve"></div>
+        <div class="preview-wrap" id="video-preview-wrap" style="--panel-accent:var(--accent-2)">
+          <div class="preview-header">
+            <div class="preview-title">Preview</div>
+            <button type="button" class="btn-download" id="video-download-btn">Download</button>
+          </div>
+          <video id="video-preview-player" class="preview-player" controls style="position:relative; z-index:2;"></video>
+        </div>
       </form>
     </div>
   </div>
@@ -893,6 +927,13 @@ body::after{
           </button>
           <div class="progress-wrap" id="ep"><div class="progress-bar" style="background:var(--accent-3)"></div></div>
           <div class="status-msg error" id="ee"></div>
+          <div class="preview-wrap" id="enhance-preview-wrap" style="--panel-accent:var(--accent-3)">
+            <div class="preview-header">
+              <div class="preview-title">Preview</div>
+              <button type="button" class="btn-download" id="enhance-download-btn">Download</button>
+            </div>
+            <audio id="enhance-preview-player" class="preview-player" controls></audio>
+          </div>
         </form>
       </div>
     </div>
@@ -1140,29 +1181,58 @@ function buildEndpoint(base,form){
   }
   return base;
 }
-function setupForm(formId,endpoint,btnId,progId,errId){
-  const form=document.getElementById(formId),btn=document.getElementById(btnId);
-  const prog=document.getElementById(progId),err=document.getElementById(errId);
+
+let activeObjectURLs = {};
+
+function setupForm(formId, endpoint, options) {
+  const { btnId, progId, errId, previewWrapId, playerId, downloadBtnId } = options;
+  const form = document.getElementById(formId);
+  const btn = document.getElementById(btnId);
+  const prog = document.getElementById(progId);
+  const err = document.getElementById(errId);
+  const previewWrap = document.getElementById(previewWrapId);
+  const player = document.getElementById(playerId);
+  const downloadBtn = document.getElementById(downloadBtnId);
+
   if(!form)return;
+
   form.addEventListener('submit',async e=>{
-    e.preventDefault();err.style.display='none';
+    e.preventDefault();
+    err.style.display='none';
+    previewWrap.classList.remove('visible');
     btn.disabled=true;btn.classList.add('processing');prog.classList.add('visible');
+
+    if (activeObjectURLs[formId]) {
+      URL.revokeObjectURL(activeObjectURLs[formId]);
+      delete activeObjectURLs[formId];
+    }
+
     try{
       const url=buildEndpoint(endpoint,form);
       const res=await fetch(url,{method:'POST',body:new FormData(form)});
       if(!res.ok){const d=await res.json().catch(()=>({}));throw new Error(d.detail||'Server error '+res.status)}
       const blob=await res.blob();
-      const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),style:'display:none'});
-      const cd=res.headers.get('content-disposition'),m=cd&&cd.match(/filename="(.+)"/);
-      a.download=m?m[1]:'output.wav';
-      document.body.appendChild(a);a.click();URL.revokeObjectURL(a.href);a.remove();
+      const objectURL = URL.createObjectURL(blob);
+      activeObjectURLs[formId] = objectURL;
+      player.src = objectURL;
+      if (player.tagName === 'VIDEO') {
+        player.muted = false;
+      }
+      previewWrap.classList.add('visible');
+
+      downloadBtn.onclick = () => {
+        const a=Object.assign(document.createElement('a'),{href:objectURL,style:'display:none'});
+        const cd=res.headers.get('content-disposition'),m=cd&&cd.match(/filename="(.+)"/);
+        a.download=m?m[1]:'output.wav';
+        document.body.appendChild(a);a.click();a.remove();
+      };
     }catch(er){err.textContent=er.message;err.style.display='flex'}
     finally{btn.disabled=false;btn.classList.remove('processing');prog.classList.remove('visible')}
   });
 }
-setupForm('audio-form',  '/denoise/denoise-audio',  'audio-btn',   'ap','ae');
-setupForm('video-form',  '/denoise/denoise-video',  'video-btn',   'vp','ve');
-setupForm('enhance-form','/enhance/enhance-audio',  'enhance-btn', 'ep','ee');
+setupForm('audio-form',   '/denoise/denoise-audio', { btnId: 'audio-btn',   progId: 'ap', errId: 'ae', previewWrapId: 'audio-preview-wrap',   playerId: 'audio-preview-player',   downloadBtnId: 'audio-download-btn' });
+setupForm('video-form',   '/denoise/denoise-video', { btnId: 'video-btn',   progId: 'vp', errId: 've', previewWrapId: 'video-preview-wrap',   playerId: 'video-preview-player',   downloadBtnId: 'video-download-btn' });
+setupForm('enhance-form', '/enhance/enhance-audio', { btnId: 'enhance-btn', progId: 'ep', errId: 'ee', previewWrapId: 'enhance-preview-wrap', playerId: 'enhance-preview-player', downloadBtnId: 'enhance-download-btn' });
 </script>
 </body>
 </html>
