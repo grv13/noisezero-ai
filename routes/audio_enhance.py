@@ -92,7 +92,7 @@ async def enhance_audio(
     model_type: str = Query("48k-hq", enum=["48k-hq", "48k-ll", "16k-hq"], description="Studio Voice model type to use.")
 ):
     """
-    Upload an audio file to enhance the speech quality using NVIDIA's Studio Voice model.
+    Upload an audio file to enhance the speech quality using the Studio Voice model.
 
     - **file**: The input audio file. Non-WAV formats will be converted automatically.
     - **model_type**: The Studio Voice model to use. This determines the required sample rate (16kHz or 48kHz). Default is '48k-hq'.
