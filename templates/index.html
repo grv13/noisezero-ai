@@ -538,6 +538,35 @@ body::after{
 .modal-content strong{font-weight:600;color:var(--text-primary)}
 
 /* ═══════════════════════════════════════
+   RESPONSIVE ADJUSTMENTS
+═══════════════════════════════════════ */
+@media (max-width: 768px) {
+    .nav {
+        padding: 0 1.5rem;
+    }
+    .nav-links {
+        display: none;
+    }
+    .hero {
+        padding: 5rem 0 4rem;
+        text-align: center;
+    }
+    .hero-eyebrow {
+        justify-content: center;
+    }
+    .hero-sub {
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .hero-cta-row {
+        justify-content: center;
+    }
+    .wrap {
+        padding: 0 1.5rem 4rem;
+    }
+}
+
+/* ═══════════════════════════════════════
    KEYFRAMES
 ═══════════════════════════════════════ */
 @keyframes fadeSlideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
