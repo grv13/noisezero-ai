@@ -4,6 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NoiseZero — AI Audio Studio</title>
+<meta name="description" content="AI-powered audio enhancement and noise reduction. Clean up your audio and video files with Studio Voice and Denoising tools.">
+<meta name="keywords" content="AI audio enhancement, noise reduction, audio cleanup, video denoising, speech enhancement, Studio Voice, background noise removal">
+<meta name="author" content="NoiseZero">
+<link rel="canonical" href="https://noisezeroai.qzz.io/"> <!-- TODO: Replace with your actual domain -->
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://noisezeroai.qzz.io/"> <!-- TODO: Replace with your actual domain -->
+<meta property="og:title" content="NoiseZero — AI Audio Studio">
+<meta property="og:description" content="AI-powered audio enhancement and noise reduction. Clean up your audio and video files with Studio Voice and Denoising tools.">
+<meta property="og:image" content="https://noisezeroai.qzz.io/og-image.png"> <!-- TODO: Replace with a URL to your social sharing image -->
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://noisezeroai.qzz.io/"> <!-- TODO: Replace with your actual domain -->
+<meta property="twitter:title" content="NoiseZero — AI Audio Studio">
+<meta property="twitter:description" content="AI-powered audio enhancement and noise reduction. Clean up your audio and video files with Studio Voice and Denoising tools.">
+<meta property="twitter:image" content="https://noisezeroai.qzz.io/og-image.png"> <!-- TODO: Replace with a URL to your social sharing image -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -520,6 +538,35 @@ body::after{
 .modal-content strong{font-weight:600;color:var(--text-primary)}
 
 /* ═══════════════════════════════════════
+   RESPONSIVE ADJUSTMENTS
+═══════════════════════════════════════ */
+@media (max-width: 768px) {
+    .nav {
+        padding: 0 1.5rem;
+    }
+    .nav-links {
+        display: none;
+    }
+    .hero {
+        padding: 5rem 0 4rem;
+        text-align: center;
+    }
+    .hero-eyebrow {
+        justify-content: center;
+    }
+    .hero-sub {
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .hero-cta-row {
+        justify-content: center;
+    }
+    .wrap {
+        padding: 0 1.5rem 4rem;
+    }
+}
+
+/* ═══════════════════════════════════════
    KEYFRAMES
 ═══════════════════════════════════════ */
 @keyframes fadeSlideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
@@ -641,12 +688,12 @@ body::after{
       </div>
       <div class="svc-card-tag">Service 03 · /enhance/enhance-audio</div>
       <div class="svc-card-title">AI Studio Voice</div>
-      <div class="svc-card-desc">Uplift speech intelligibility and presence using NVIDIA's real-time Studio Voice AI — available in three precision models.</div>
+      <div class="svc-card-desc">Uplift speech intelligibility and presence using real-time Studio Voice AI — available in three precision models.</div>
       <div class="svc-card-specs">
         <div class="spec-row"><span class="spec-key">Models</span><span class="spec-val">48k-hq · 48k-ll · 16k-hq</span></div>
         <div class="spec-row"><span class="spec-key">Output</span><span class="spec-val">Enhanced WAV (16k or 48kHz)</span></div>
         <div class="spec-row"><span class="spec-key">Mode</span><span class="spec-val">Transactional + Streaming</span></div>
-        <div class="spec-row"><span class="spec-key">Backend</span><span class="spec-val">NVIDIA Cloud Functions</span></div>
+        <div class="spec-row"><span class="spec-key">Backend</span><span class="spec-val">Cloud-Powered AI</span></div>
       </div>
       <button class="svc-card-link" style="color:var(--accent-3)">Open Tool <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
     </div>
@@ -831,7 +878,7 @@ body::after{
       <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-3)">Cloud Powered · Service 03</span>
     </div>
     <h1 class="page-title">Studio<br>Voice</h1>
-    <p class="page-sub">Professional-grade AI speech enhancement powered by NVIDIA's cloud inference. Choose a model tuned for quality or low latency.</p>
+    <p class="page-sub">Professional-grade AI speech enhancement powered by cloud-based inference. Choose a model tuned for quality or low latency.</p>
   </div>
 
   <!-- Wide info + form panel -->
@@ -864,7 +911,7 @@ body::after{
           </div>
           <div class="feature-item">
             <div class="feature-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--accent-3)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-            TLS-encrypted transport to NVIDIA cloud endpoints
+            TLS-encrypted transport to secure cloud endpoints
           </div>
         </div>
       </div>
@@ -998,7 +1045,7 @@ body::after{
     <p><strong>No Data Storage:</strong> When you upload a file to our Service, it is held in temporary memory on our server only for the duration of the AI processing. Once the processing is complete and the resulting file is sent back to you, your original file and the processed version are <strong>permanently and irretrievably deleted</strong> from our system. We do not keep any copies.</p>
     <p><strong>Log Data:</strong> Like most website operators, we may collect non-personally-identifying information of the sort that web browsers and servers typically make available, such as the browser type, language preference, referring site, and the date and time of each visitor request. Our purpose in collecting this information is to better understand how our visitors use the website. This data is anonymous and is not linked to any personal information.</p>
     <h3>Third-Party Services</h3>
-    <p>The "Studio Voice" feature utilizes NVIDIA's cloud inference APIs. Your audio data is sent securely via TLS encryption to NVIDIA's servers for processing. According to NVIDIA's policies, they do not store your data after processing. We are not responsible for the privacy practices of NVIDIA. We encourage you to review their privacy policy.</p>
+    <p>The "Studio Voice" feature utilizes powerful cloud inference APIs. Your audio data is sent securely via TLS encryption to our cloud provider for processing. According to their policies, they do not store your data after processing. We are not responsible for the privacy practices of our cloud provider. We encourage you to review their privacy policy.</p>
     <h3>Policy Changes</h3>
     <p>Although most changes are likely to be minor, we may change our Privacy Policy from time to time, and at our sole discretion. We encourage visitors to frequently check this page for any changes to its Privacy Policy.</p>
   </div>

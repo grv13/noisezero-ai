@@ -1,0 +1,11 @@
+User-agent: *
+
+# Disallow crawling of API endpoints and dynamic job/download pages
+Disallow: /denoise/
+Disallow: /enhance/
+Disallow: /upload
+Disallow: /jobs/
+Disallow: /download/
+
+# Point to the sitemap (replace with your actual sitemap URL)
+Sitemap: https://www.noisezero.ai/sitemap.xml
